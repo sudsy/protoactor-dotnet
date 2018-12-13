@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
+      <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Google.Protobuf.Tools" Version="3.6.1" />
+      <PackageReference Include="Grpc" Version="1.17.0" />
+      <PackageReference Include="Grpc.Tools" Version="1.17.0" />
+        <PackageReference Include="System.Reactive" Version="4.1.2" />
+    </ItemGroup>
+
+    
+
+</Project>

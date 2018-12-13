@@ -1,0 +1,22 @@
+syntax = "proto3";
+package client;
+option csharp_namespace = "Proto.Client";
+
+import "Proto.Actor/protos.proto";
+import "Proto.Remote/protos.proto";
+
+
+
+message CreateClientProxyActor {
+    actor.PID clientPID = 1;
+}
+
+message ClientProxyActorCreated {
+    actor.PID clientPID = 1;
+    actor.PID proxyPID = 2;
+}
+
+
+service ClientRemoting {
+    rpc ConnectClient (stream remote.MessageBatch) returns (stream remote.MessageBatch) {}
+}  
