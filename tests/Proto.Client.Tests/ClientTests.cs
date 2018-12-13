@@ -1,6 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
+using Grpc.Core.Testing;
+using Grpc.Core.Utils;
+using Moq;
 using Proto.Remote;
 using Proto.Remote.Tests;
 using Proto.Remote.Tests.Messages;
@@ -8,6 +13,21 @@ using Xunit;
 
 namespace Proto.Client.Tests
 {
+//    class mockStream<T> : IAsyncStreamReader<T>
+//    {
+//        public void Dispose()
+//        {
+//            throw new NotImplementedException();
+//        }
+//
+//        public Task<bool> MoveNext(CancellationToken cancellationToken)
+//        {
+//            throw new NotImplementedException();
+//        }
+//
+//        public T Current { get; }
+//    }
+    
     [Collection("RemoteTests"), Trait("Category", "Remote")]
     public class ClientTests
     {
@@ -18,6 +38,34 @@ namespace Proto.Client.Tests
         {
             _remoteManager = remoteManager;
         }
+
+        [Fact, DisplayTestMethodName]
+        public async void CanCreateClientProxyActor()
+        {
+            
+            var mockRequestStream = new Mock<IAsyncStreamReader<MessageBatch>>();
+            mockRequestStream.SetupSequence(stream => stream.MoveNext(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(true))
+                .Returns(Task.FromResult(false));
+                
+            mockRequestStream.SetupGet(stream => stream.Current)
+                .Returns(() =>
+                {
+                    var localPID = new PID();
+                    return ClientContext.getMessageBatch(null, new CreateClientProxyActor()
+                    {
+                        ClientPID = localPID
+                    });
+                    
+                });
+            var mockResponseStream = new Mock<IServerStreamWriter<MessageBatch>>();
+            var fakeServerCallContext = TestServerCallContext.Create("fooMethod", null, DateTime.UtcNow.AddHours(1), new Metadata(), CancellationToken.None, "127.0.0.1", null, null, (metadata) => TaskUtils.CompletedTask, () => new WriteOptions(), (writeOptions) => { });
+            var clientEndpointManager = new ClientEndpointManager();
+            clientEndpointManager.ConnectClient(mockRequestStream.Object, mockResponseStream.Object,
+                fakeServerCallContext);
+            
+            
+        } 
         
         [Fact, DisplayTestMethodName]
         public async void CanSendJsonAndReceiveToClient()

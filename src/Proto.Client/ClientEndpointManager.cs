@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -15,6 +16,7 @@ namespace Proto.Client
             //Read any messages we receive from the client
             await requestStream.ForEachAsync(async batch =>
             {
+                Console.WriteLine("Got a message");
 //                PID clientProxyActorPID = null;
 //                //Check if we already have a proxy actor for this client's PID
 //                if (mappingTable.ContainsKey(envelope.Sender))
