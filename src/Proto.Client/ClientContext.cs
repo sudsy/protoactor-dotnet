@@ -12,7 +12,7 @@ namespace Proto.Client
 {
     public class ClientContext : ISpawnContext, ISenderContext
     {
-        private IClientStreamWriter<MessageBatch> _requestStream;
+        private IClientStreamWriter<ClientMessageBatch> _requestStream;
         private Subject<Object> _responseStreamSubject;
 
         public ClientContext(string hostname, int port, RemoteConfig config)
@@ -85,7 +85,7 @@ namespace Proto.Client
             //Don't know how to get the sender ID from here but doesn't matter right now
 
             //TODO: This really needs to be handled by an actor to make sure we don't write on different threads
-            _requestStream.WriteAsync(getMessageBatch(target, message));
+            _requestStream.WriteAsync(getClientMessageBatch(target, message));
         }
 
         
@@ -114,23 +114,25 @@ namespace Proto.Client
         public object Message { get; }
         
         
-        static public MessageBatch getMessageBatch(PID target, object message)
+        static public ClientMessageBatch getClientMessageBatch(PID target, object message)
         {
             const int serializerId = 1;
             var typeName = Serialization.GetTypeName(message, serializerId);
             
-            var batch = new MessageBatch();
+            var batch = new ClientMessageBatch();
             
             batch.TypeNames.Add(typeName);
             
             if (target != null)
             {
-                batch.TargetNames.Add(target.Id); //TODO: We shouldn't really be sending a null target, this is really only fro the actor create message should this be a system message instead?
+                batch.TargetPids.Add(target); //TODO: We shouldn't really be sending a null target, this is really only fro the actor create message should this be a system message instead?
             }
-           
+
+            var targetId = target != null ? 0 : -1;
+            
             batch.Envelopes.Add(new Remote.MessageEnvelope()
             {
-                Target = 0,
+                Target = targetId,
                 TypeId = 0,
                 SerializerId = serializerId,
                 MessageData = Serialization.Serialize(message, serializerId)

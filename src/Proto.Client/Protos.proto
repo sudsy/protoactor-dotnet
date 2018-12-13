@@ -16,7 +16,13 @@ message ClientProxyActorCreated {
     actor.PID proxyPID = 2;
 }
 
+message ClientMessageBatch {
+    repeated string type_names = 1;
+    repeated actor.PID target_pids = 2;
+    repeated remote.MessageEnvelope envelopes = 3;
+}
+
 
 service ClientRemoting {
-    rpc ConnectClient (stream remote.MessageBatch) returns (stream remote.MessageBatch) {}
+    rpc ConnectClient (stream ClientMessageBatch) returns (stream ClientMessageBatch) {}
 }  

@@ -12,14 +12,14 @@ namespace Proto.Client {
   {
     static readonly string __ServiceName = "client.ClientRemoting";
 
-    static readonly grpc::Marshaller<global::Proto.Remote.MessageBatch> __Marshaller_remote_MessageBatch = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.MessageBatch.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Proto.Client.ClientMessageBatch> __Marshaller_client_ClientMessageBatch = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Client.ClientMessageBatch.Parser.ParseFrom);
 
-    static readonly grpc::Method<global::Proto.Remote.MessageBatch, global::Proto.Remote.MessageBatch> __Method_ConnectClient = new grpc::Method<global::Proto.Remote.MessageBatch, global::Proto.Remote.MessageBatch>(
+    static readonly grpc::Method<global::Proto.Client.ClientMessageBatch, global::Proto.Client.ClientMessageBatch> __Method_ConnectClient = new grpc::Method<global::Proto.Client.ClientMessageBatch, global::Proto.Client.ClientMessageBatch>(
         grpc::MethodType.DuplexStreaming,
         __ServiceName,
         "ConnectClient",
-        __Marshaller_remote_MessageBatch,
-        __Marshaller_remote_MessageBatch);
+        __Marshaller_client_ClientMessageBatch,
+        __Marshaller_client_ClientMessageBatch);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
@@ -30,7 +30,7 @@ namespace Proto.Client {
     /// <summary>Base class for server-side implementations of ClientRemoting</summary>
     public abstract partial class ClientRemotingBase
     {
-      public virtual global::System.Threading.Tasks.Task ConnectClient(grpc::IAsyncStreamReader<global::Proto.Remote.MessageBatch> requestStream, grpc::IServerStreamWriter<global::Proto.Remote.MessageBatch> responseStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task ConnectClient(grpc::IAsyncStreamReader<global::Proto.Client.ClientMessageBatch> requestStream, grpc::IServerStreamWriter<global::Proto.Client.ClientMessageBatch> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -60,11 +60,11 @@ namespace Proto.Client {
       {
       }
 
-      public virtual grpc::AsyncDuplexStreamingCall<global::Proto.Remote.MessageBatch, global::Proto.Remote.MessageBatch> ConnectClient(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncDuplexStreamingCall<global::Proto.Client.ClientMessageBatch, global::Proto.Client.ClientMessageBatch> ConnectClient(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return ConnectClient(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
-      public virtual grpc::AsyncDuplexStreamingCall<global::Proto.Remote.MessageBatch, global::Proto.Remote.MessageBatch> ConnectClient(grpc::CallOptions options)
+      public virtual grpc::AsyncDuplexStreamingCall<global::Proto.Client.ClientMessageBatch, global::Proto.Client.ClientMessageBatch> ConnectClient(grpc::CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_ConnectClient, null, options);
       }

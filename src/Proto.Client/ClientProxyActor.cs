@@ -8,7 +8,7 @@ namespace Proto.Client
     {
         private PID _proxyPID;
 
-        public ClientProxyActor(PID proxyPID, IServerStreamWriter<MessageBatch> responseStream)
+        public ClientProxyActor(PID proxyPID, IServerStreamWriter<ClientMessageBatch> responseStream)
         {
             //TODO - fix this reference to another actor that manages the stream
             _proxyPID = proxyPID;
