@@ -18,6 +18,7 @@ namespace Proto.Client
         public ClientContext(string hostname, int port, RemoteConfig config)
         {
          
+            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Channel channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
             var client = new ClientRemoting.ClientRemotingClient(channel);
             var clientStreams = client.ConnectClient();
@@ -36,6 +37,7 @@ namespace Proto.Client
                     var messageBatch = responseStream.Current;
                     foreach (var envelope in messageBatch.Envelopes)
                     {
+                        
                         _responseStreamSubject.OnNext(Serialization.Deserialize(messageBatch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId));     
                     }
                    
@@ -78,6 +80,12 @@ namespace Proto.Client
             throw new NotImplementedException();
         }
 
+        public void SendEnvelope(PID target, MessageEnvelope envelope, int serializerID)
+        {
+            var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
+            _requestStream.WriteAsync(getClientMessageBatch(target, message, serializerID));
+        }
+        
         public void Send(PID target, object message)
         {
            
@@ -85,7 +93,7 @@ namespace Proto.Client
             //Don't know how to get the sender ID from here but doesn't matter right now
 
             //TODO: This really needs to be handled by an actor to make sure we don't write on different threads
-            _requestStream.WriteAsync(getClientMessageBatch(target, message));
+            _requestStream.WriteAsync(getClientMessageBatch(target, message, Serialization.DefaultSerializerId));
         }
 
         
@@ -114,9 +122,9 @@ namespace Proto.Client
         public object Message { get; }
         
         
-        static public ClientMessageBatch getClientMessageBatch(PID target, object message)
+        static public ClientMessageBatch getClientMessageBatch(PID target, object message, int serializerId )
         {
-            const int serializerId = 1;
+            
             var typeName = Serialization.GetTypeName(message, serializerId);
             
             var batch = new ClientMessageBatch();

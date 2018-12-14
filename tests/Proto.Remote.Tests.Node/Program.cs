@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.CommandLineUtils;
+using Proto.Client;
 using Proto.Remote.Tests.Messages;
 
 namespace Proto.Remote.Tests.Node
@@ -13,6 +14,7 @@ namespace Proto.Remote.Tests.Node
             var app = new CommandLineApplication();
             var hostOption = app.Option("-h|--host", "host", CommandOptionType.SingleValue);
             var portArgument = app.Option("-p|--port", "port", CommandOptionType.SingleValue);
+            var clientProxyPortArgument = app.Option("-c|--clientport", "port", CommandOptionType.SingleValue);
 
             app.OnExecute(() => {
                 var host = hostOption.Value() ?? "127.0.0.1";
@@ -26,6 +28,15 @@ namespace Proto.Remote.Tests.Node
 
                 Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
                 Remote.Start(host, port);
+
+                
+                if (clientProxyPortArgument.HasValue())
+                {
+                    Console.WriteLine("Starting Client Proxy");
+                    ClientProxy.Start("127.0.0.1", Convert.ToInt32(clientProxyPortArgument.Values[0]));    
+                }
+                
+                
                 var props = Props.FromProducer(() => new EchoActor(host, port));
                 Remote.RegisterKnownKind("EchoActor", props);
                 context.SpawnNamed(props, "EchoActorInstance");

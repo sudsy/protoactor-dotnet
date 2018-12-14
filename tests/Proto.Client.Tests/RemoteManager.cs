@@ -17,9 +17,11 @@ namespace Proto.Remote.Tests
         public RemoteManager()
         {
             Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            ProvisionNode("127.0.0.1", 12000);
+            ProvisionNode("127.0.0.1", 12000, 12222);
 
-            ClientProxy.Start("127.0.0.1", 12222);
+            
+            
+           
             
             Thread.Sleep(3000);
         }
@@ -33,7 +35,7 @@ namespace Proto.Remote.Tests
             }
         }
 
-        public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000)
+        public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000, int clientPort = 12222)
         {
             var address = $"{host}:{port}";
             var buildConfig = "Debug";
@@ -53,7 +55,7 @@ namespace Proto.Remote.Tests
             {
                 StartInfo =
                 {
-                    Arguments = $"{nodeDllPath} --host {host} --port {port}",
+                    Arguments = $"{nodeDllPath} --host {host} --port {port} --clientport {clientPort}",
                     CreateNoWindow = false,
                     UseShellExecute = false,
                     FileName = "dotnet"

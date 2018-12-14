@@ -18,22 +18,20 @@ namespace Proto.Client
         public static void Start(string hostname, int port, RemoteConfig config)
         {
 //            RemoteConfig = config;
-//
-//            
-//            //Change this to client manager
+
+            
+            //Change this to client manager
 //            EndpointManager.Start();
 //            _endpointReader = new EndpointReader();
-//            _server = new Server
-//            {
-//                Services = { Remoting.BindService(_endpointReader) },
-//                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
-//            };
-//            _server.Start();
-//
-//            var boundPort = _server.Ports.Single().BoundPort;
-//            var boundAddr = $"{hostname}:{boundPort}";
-//            var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? boundPort}";
-//           
+            var clientEndpointManager = new ClientEndpointManager();
+            _server = new Server
+            {
+                Services = { ClientRemoting.BindService(clientEndpointManager) },
+                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
+            };
+            _server.Start();
+
+          
 
             
 
