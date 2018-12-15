@@ -61,10 +61,19 @@ namespace Proto.Remote.Tests.Node
 
         public Task ReceiveAsync(IContext context)
         {
+            Console.WriteLine($"Echo Actor Received - {context.Message} from {context.Sender}");
             switch (context.Message)
             {
                 case Ping ping:
-                    context.Respond(new Pong{Message= $"{_host}:{_port} {ping.Message}"});
+                    try
+                    {
+                        context.Respond(new Pong {Message = $"{_host}:{_port} {ping.Message}"});
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                   
                     return Actor.Done;
                 default:
                     return Actor.Done;

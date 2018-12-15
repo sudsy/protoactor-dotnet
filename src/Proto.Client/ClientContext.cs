@@ -37,8 +37,14 @@ namespace Proto.Client
                     var messageBatch = responseStream.Current;
                     foreach (var envelope in messageBatch.Envelopes)
                     {
+                        var target = messageBatch.TargetPids[envelope.Target];
+                        var message = Serialization.Deserialize(messageBatch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
+                        //todo: Need to convert the headers here
+                        var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, null);
                         
-                        _responseStreamSubject.OnNext(Serialization.Deserialize(messageBatch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId));     
+                        _responseStreamSubject.OnNext(message); //Perhaps there's a better way to do this than rx and the listener probably a local actor
+                        
+                        RootContext.Empty.Send(target, localEnvelope);
                     }
                    
                 }
@@ -62,10 +68,15 @@ namespace Proto.Client
             var createdMessage =  (ClientProxyActorCreated)_responseStreamSubject
                 .Where((responseMessage) => responseMessage is ClientProxyActorCreated created && created.ClientPID.Equals(localPID))
                 .Take(1)
-                .Timeout(TimeSpan.FromSeconds(3))
+                .Timeout(TimeSpan.FromSeconds(30))
                 .Wait();
 
-            //Put them in a mapping table
+            //Map messages
+            
+            
+            //Make sure we shut down the listener if either the remote or local actor shuts down
+            
+            
             
             return createdMessage.ProxyPID;
         }
@@ -83,7 +94,7 @@ namespace Proto.Client
         public void SendEnvelope(PID target, MessageEnvelope envelope, int serializerID)
         {
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
-            _requestStream.WriteAsync(getClientMessageBatch(target, message, serializerID));
+            _requestStream.WriteAsync(getClientMessageBatch(target, message, serializerID, sender, header));
         }
         
         public void Send(PID target, object message)
@@ -122,7 +133,7 @@ namespace Proto.Client
         public object Message { get; }
         
         
-        static public ClientMessageBatch getClientMessageBatch(PID target, object message, int serializerId )
+        static public ClientMessageBatch getClientMessageBatch(PID target, object message, int serializerId, PID sender = null, Proto.MessageHeader headers = null )
         {
             
             var typeName = Serialization.GetTypeName(message, serializerId);
@@ -130,6 +141,7 @@ namespace Proto.Client
             var batch = new ClientMessageBatch();
             
             batch.TypeNames.Add(typeName);
+            
             
             if (target != null)
             {
@@ -143,7 +155,9 @@ namespace Proto.Client
                 Target = targetId,
                 TypeId = 0,
                 SerializerId = serializerId,
-                MessageData = Serialization.Serialize(message, serializerId)
+                MessageData = Serialization.Serialize(message, serializerId),
+                Sender = sender
+//                MessageHeader = headers
             });
             return batch;
         }

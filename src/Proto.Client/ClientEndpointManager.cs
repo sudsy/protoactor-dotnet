@@ -34,7 +34,7 @@ namespace Proto.Client
                         if (message is CreateClientProxyActor createClientMessage)
                         {
                             var props =
-                                Props.FromProducer(() => new ClientProxyActor(envelope.Sender, responseStream)); //TODO: fix this to take an actor as a refence to ensure we write to stream in a thread safe way
+                                Props.FromProducer(() => new ClientProxyActor(createClientMessage.ClientPID, responseStream)); //TODO: fix this to take an actor as a refence to ensure we write to stream in a thread safe way
                             var clientProxyActorPID = RootContext.Empty.Spawn(props);
                             //Send a return message with the proxy id contained within
                             Console.WriteLine("Sending created message");
@@ -52,8 +52,14 @@ namespace Proto.Client
                     {
                         var target = clientMessageBatch.TargetPids[envelope.Target]; //There is a logic problem with this, it's hard to define null - maybe need a null pid
                         //Forward the message to the correct endpoint
-                        Console.WriteLine($"About to forward message from client to {target}");
-                        RootContext.Empty.Send(target, message);
+                        Proto.MessageHeader header = null;
+                        if (envelope.MessageHeader != null)
+                        {
+                            header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+                        }
+                        Console.WriteLine($"About to forward message from client to {target} from {envelope.Sender}");
+                        var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                        RootContext.Empty.Send(target, localEnvelope);
                         Console.WriteLine("Message forwarded");
                     }
                     

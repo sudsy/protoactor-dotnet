@@ -32,7 +32,7 @@ namespace Proto.Client.Tests
         public async void CanSendJsonAndReceiveToClient()
         {
             var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
-            var ct = new CancellationTokenSource(3000);
+            var ct = new CancellationTokenSource(30000);
             var tcs = new TaskCompletionSource<bool>();
             ct.Token.Register(() =>
             {
