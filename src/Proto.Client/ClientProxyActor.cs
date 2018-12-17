@@ -27,7 +27,7 @@ namespace Proto.Client
                      //Ignore lifecycle messages
                      return Actor.Done;
                  default:
-                     Console.WriteLine($"Forwarding Message {context.Message} to stream for target {_proxyPid} ");
+                     
                      
             
                      var env = new RemoteDeliver(context.Headers, context.Message, _proxyPid, context.Sender, Serialization.DefaultSerializerId);

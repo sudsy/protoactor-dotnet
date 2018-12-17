@@ -15,12 +15,11 @@ namespace Proto.Client
         }
         public Task ReceiveAsync(IContext context)
         {
-            Console.WriteLine($"Endpoint Writer {context.Self} received message {context.Message}");
+           
             if (!(context.Message is RemoteDeliver rd)) return Actor.Done;
 
-          
             var batch = rd.getMessageBatch();
-            Console.WriteLine("Sending Batch to stream");
+           
             return _responseStream.WriteAsync(batch);
 
         }

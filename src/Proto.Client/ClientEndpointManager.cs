@@ -21,7 +21,7 @@ namespace Proto.Client
         public override async Task ConnectClient(IAsyncStreamReader<ClientMessageBatch> requestStream,
             IServerStreamWriter<MessageBatch> responseStream, ServerCallContext context)
         {
-            Console.WriteLine("connected");
+            
             
             var proxyActivator = SpawnProxyActivator(responseStream);
             //Read any messages we receive from the client
@@ -31,9 +31,9 @@ namespace Proto.Client
                 
                 foreach (var envelope in clientMessageBatch.Batch.Envelopes)
                 {
-                    Console.WriteLine("message received");
+                    
                     var message = Serialization.Deserialize(clientMessageBatch.Batch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
-                    Console.WriteLine("message deserialized");
+                    
                     
                     var target = new PID(targetAddress, clientMessageBatch.Batch.TargetNames[envelope.Target]); 
                     
@@ -56,10 +56,10 @@ namespace Proto.Client
                     {
                         header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
                     }
-                    Console.WriteLine($"About to forward message from client to {target} from {envelope.Sender}");
+                   
                     var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
                     RootContext.Empty.Send(target, localEnvelope);
-                    Console.WriteLine("Message forwarded");
+                   
                    
                     
                 }
@@ -76,7 +76,7 @@ namespace Proto.Client
             //TOD, make one of these supervise the other so we can shutdown the whole tree if the connection dies
             var endpointWriter = RootContext.Empty.Spawn(Props.FromProducer(() => new ClientHostEndpointWriter(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy));
             
-            Console.WriteLine($"Created Endpoint Writer {endpointWriter}");
+            
             var props = Props.FromProducer(() => new ProxyActivator(endpointWriter)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             return RootContext.Empty.Spawn(props);
         }

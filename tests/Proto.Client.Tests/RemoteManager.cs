@@ -65,7 +65,7 @@ namespace Proto.Remote.Tests
             process.Start();
             Nodes.Add(address, process);
             
-            Console.WriteLine($"Waiting for remote node {address} to initialise...");
+          
             Thread.Sleep(TimeSpan.FromSeconds(3));
 
             return (address, process);

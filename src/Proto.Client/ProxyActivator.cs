@@ -15,7 +15,7 @@ namespace Proto.Client
         }
         public Task ReceiveAsync(IContext context)
         {
-            Console.WriteLine($"Proxy Activator {context.Self} Received Message - {context.Message.GetType()}");
+           
             if (context.Message is ProxyPidRequest request)
             {
                 var props =
@@ -23,7 +23,7 @@ namespace Proto.Client
                 
                 var clientProxyActorPid = RootContext.Empty.Spawn(props);
                 //Send a return message with the proxy id contained within
-                Console.WriteLine($"Sending created message to {context.Sender} using endpoint {_endpointWriter}");
+           
 
                 var proxyResponse = new ProxyPidResponse()
                 {
