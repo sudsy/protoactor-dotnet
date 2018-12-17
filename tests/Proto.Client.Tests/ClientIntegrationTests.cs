@@ -19,12 +19,14 @@ namespace Proto.Client.Tests
     [Collection("RemoteTests"), Trait("Category", "Remote")]
     public class ClientIntegrationTests
     {
-        private static readonly Client client = new Client("127.0.0.1", 12222, new RemoteConfig());
+        
        
         private readonly RemoteManager _remoteManager;
+        private Client _client;
 
         public ClientIntegrationTests(RemoteManager remoteManager)
         {
+            _client = new Client("127.0.0.1", 12222, new RemoteConfig());
             _remoteManager = remoteManager;
         }
 
@@ -33,6 +35,7 @@ namespace Proto.Client.Tests
         [Fact, DisplayTestMethodName]
         public async void CanSendJsonAndReceiveToClient()
         {
+            
             
             var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
             var ct = new CancellationTokenSource(30000);
@@ -43,7 +46,7 @@ namespace Proto.Client.Tests
             });
             
             //This needs to spawn with a connection ID
-            var localActor = await client.SpawnProxyAsync(Props.FromFunc(ctx =>
+            var localActor = RootContext.Empty.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is Pong)
                 {
@@ -53,11 +56,49 @@ namespace Proto.Client.Tests
 
                 return Actor.Done;
             }));
+
             
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
             
-            client.SendMessage(remoteActor, envelope, 1);
+            _client.SendMessage(remoteActor, envelope, 1);
+            await tcs.Task;
+        }
+
+        [Fact, DisplayTestMethodName]
+        public async void CanRequestAsyncFromClientActor()
+        {
+            
+            
+            var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
+            
+            var ct = new CancellationTokenSource(30000);
+            var tcs = new TaskCompletionSource<bool>();
+            ct.Token.Register(() =>
+            {
+                tcs.TrySetCanceled();
+            });
+            
+            //This needs to spawn with a connection ID
+            var proxyActor = RootContext.Empty.Spawn(Props.FromFunc(async ctx =>
+            {
+                if (ctx.Message is Started)
+                {
+                   
+                    var result = await ctx.RequestAsync<Pong>(remoteActor, new Ping()
+                    {
+                        Message = "Hello from inside"
+                    });
+                    tcs.SetResult(true);
+                    ctx.Self.Stop();
+                }
+                
+                
+            }));
+            
+           
+            
+           
             await tcs.Task;
         }
     }

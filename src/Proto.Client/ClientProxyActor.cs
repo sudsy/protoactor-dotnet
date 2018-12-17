@@ -12,12 +12,14 @@ namespace Proto.Client
 
         public ClientProxyActor(PID proxyPid, PID endpointWriter)
         {
+            //TODO, setup remote monitoring so that this shuts down when either the client connection goes away or the client actor is terminated 
             _proxyPid = proxyPid;
             _endpointWriter = endpointWriter;
         }
         
         public Task ReceiveAsync(IContext context)
         {
+            
             switch (context.Message)
             {
                 case Started started:
@@ -25,7 +27,7 @@ namespace Proto.Client
                      //Ignore lifecycle messages
                      return Actor.Done;
                  default:
-                     Console.WriteLine($"Forwarding Message to stream - {context.Message}");
+                     Console.WriteLine($"Forwarding Message {context.Message} to stream for target {_proxyPid} ");
                      
             
                      var env = new RemoteDeliver(context.Headers, context.Message, _proxyPid, context.Sender, Serialization.DefaultSerializerId);

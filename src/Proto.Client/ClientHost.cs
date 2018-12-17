@@ -9,8 +9,12 @@ namespace Proto.Client
 {
     public class ClientHost 
     {
-        
 
+        static ClientHost()
+        {
+            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+        }
+        
         public static void Start(string hostname, int port)
         {
             Start(hostname, port, new RemoteConfig());

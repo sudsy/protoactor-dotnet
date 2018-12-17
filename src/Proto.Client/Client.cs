@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -14,12 +16,20 @@ namespace Proto.Client
         private readonly string _hostname;
         private readonly int _port;
         private readonly PID _endpointWriter;
+        private readonly ConcurrentDictionary<string, PID> _remoteProxyTable = new ConcurrentDictionary<string, PID>();
 
+
+        static Client()
+        {
+            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+        }
+        
         public Client(string hostname, int port, RemoteConfig config)
         {
             _hostname = hostname;
             _port = port;
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            
+           
             
             ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientProxyProcess(this, pid));
             
@@ -58,36 +68,49 @@ namespace Proto.Client
             
         }
 
-      
-
-        public async Task<PID> SpawnProxyAsync(Props props)
+        public async Task<PID> GetProxyPID(PID localPID)
         {
-            //Get a local PID 
-            var localPid = RootContext.Empty.Spawn(props);
-            //Get a remote proxy PID
-          
+            //This needs a cache
+            var localPidString = localPID.ToString();
+
+            _remoteProxyTable.TryGetValue(localPidString, out var remoteProxyPid);
+            
+            if (remoteProxyPid != null)
+            {
+                return remoteProxyPid;
+            }
             
             var activator = new PID($"{_hostname}:{_port}", "proxy_activator");
-
-            var createdMessage = await RootContext.Empty.RequestAsync<ProxyPidResponse>(activator, new ProxyPidRequest()
+            
+            var proxyResponseMessage = await RootContext.Empty.RequestAsync<ProxyPidResponse>(activator, new ProxyPidRequest()
             {
-                ClientPID = localPid
+                ClientPID = localPID
             });
             
             
+            remoteProxyPid =  proxyResponseMessage.ProxyPID;
             
-            
-            return createdMessage.ProxyPID;
+            _remoteProxyTable.TryAdd(localPidString, remoteProxyPid);
+
+            return remoteProxyPid;
         }
-        
+
+  
  
 
         public void SendMessage(PID target, object envelope, int serializerId)
         {
            
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
+
+            var remoteProxyID = sender;
             
-            var env = new RemoteDeliver(header, message, target, sender, serializerId);
+            if (!(message is ProxyPidRequest))
+            {
+                remoteProxyID = GetProxyPID(sender).Result;
+            }
+            
+            var env = new RemoteDeliver(header, message, target, remoteProxyID, serializerId);
             
             RootContext.Empty.Send(_endpointWriter, env);
 

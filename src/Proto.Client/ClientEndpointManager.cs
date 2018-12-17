@@ -12,7 +12,7 @@ namespace Proto.Client
         public ClientEndpointManager(string clientHostAddress)
         {
             _clientHostAddress = clientHostAddress;
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            
         }
         
         
@@ -42,6 +42,7 @@ namespace Proto.Client
                         //Remap host address from the client hosting port to the proper Remote Port
                         target.Address = ProcessRegistry.Instance.Address;
                     }
+                    
                     //Forward the message to the correct endpoint
                     Proto.MessageHeader header = null;
                     if (envelope.MessageHeader != null)
