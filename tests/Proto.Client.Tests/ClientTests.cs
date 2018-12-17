@@ -31,7 +31,7 @@ namespace Proto.Client.Tests
                 .Returns(() =>
                 {
                     var localPID = new PID();
-                    return ClientContext.getClientMessageBatch(null, new CreateClientProxyActor()
+                    return Client.getClientMessageBatch(null, new ProxyPidRequest()
                     {
                         ClientPID = localPID
                     }, Serialization.DefaultSerializerId);
@@ -39,7 +39,7 @@ namespace Proto.Client.Tests
                 });
             var mockResponseStream = new Mock<IServerStreamWriter<ClientMessageBatch>>();
             var fakeServerCallContext = TestServerCallContext.Create("fooMethod", null, DateTime.UtcNow.AddHours(1), new Metadata(), CancellationToken.None, "127.0.0.1", null, null, (metadata) => TaskUtils.CompletedTask, () => new WriteOptions(), (writeOptions) => { });
-            var clientEndpointManager = new ClientEndpointManager();
+            var clientEndpointManager = new ClientEndpointManager("");
             clientEndpointManager.ConnectClient(mockRequestStream.Object, mockResponseStream.Object,
                 fakeServerCallContext);
             

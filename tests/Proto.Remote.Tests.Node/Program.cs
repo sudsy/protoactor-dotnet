@@ -33,7 +33,7 @@ namespace Proto.Remote.Tests.Node
                 if (clientProxyPortArgument.HasValue())
                 {
                     Console.WriteLine("Starting Client Proxy");
-                    ClientProxy.Start("127.0.0.1", Convert.ToInt32(clientProxyPortArgument.Values[0]));    
+                    ClientHost.Start("127.0.0.1", Convert.ToInt32(clientProxyPortArgument.Values[0]));    
                 }
                 
                 

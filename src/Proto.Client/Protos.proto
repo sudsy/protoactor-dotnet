@@ -5,14 +5,11 @@ option csharp_namespace = "Proto.Client";
 import "Proto.Actor/protos.proto";
 import "Proto.Remote/protos.proto";
 
-
-
-message CreateClientProxyActor {
+message ProxyPidRequest {
     actor.PID clientPID = 1;
 }
 
-message ClientProxyActorCreated {
-    actor.PID clientPID = 1;
+message ProxyPidResponse {
     actor.PID proxyPID = 2;
 }
 

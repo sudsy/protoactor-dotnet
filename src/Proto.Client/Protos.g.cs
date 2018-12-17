@@ -25,10 +25,9 @@ namespace Proto.Client {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgxQcm90b3MucHJvdG8SBmNsaWVudBoYUHJvdG8uQWN0b3IvcHJvdG9zLnBy",
-            "b3RvGhlQcm90by5SZW1vdGUvcHJvdG9zLnByb3RvIjcKFkNyZWF0ZUNsaWVu",
-            "dFByb3h5QWN0b3ISHQoJY2xpZW50UElEGAEgASgLMgouYWN0b3IuUElEIlYK",
-            "F0NsaWVudFByb3h5QWN0b3JDcmVhdGVkEh0KCWNsaWVudFBJRBgBIAEoCzIK",
-            "LmFjdG9yLlBJRBIcCghwcm94eVBJRBgCIAEoCzIKLmFjdG9yLlBJRCJ1ChJD",
+            "b3RvGhlQcm90by5SZW1vdGUvcHJvdG9zLnByb3RvIjAKD1Byb3h5UGlkUmVx",
+            "dWVzdBIdCgljbGllbnRQSUQYASABKAsyCi5hY3Rvci5QSUQiMAoQUHJveHlQ",
+            "aWRSZXNwb25zZRIcCghwcm94eVBJRBgCIAEoCzIKLmFjdG9yLlBJRCJ1ChJD",
             "bGllbnRNZXNzYWdlQmF0Y2gSEgoKdHlwZV9uYW1lcxgBIAMoCRIfCgt0YXJn",
             "ZXRfcGlkcxgCIAMoCzIKLmFjdG9yLlBJRBIqCgllbnZlbG9wZXMYAyADKAsy",
             "Fy5yZW1vdGUuTWVzc2FnZUVudmVsb3BlMl8KDkNsaWVudFJlbW90aW5nEk0K",
@@ -38,8 +37,8 @@ namespace Proto.Client {
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, global::Proto.Remote.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.CreateClientProxyActor), global::Proto.Client.CreateClientProxyActor.Parser, new[]{ "ClientPID" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientProxyActorCreated), global::Proto.Client.ClientProxyActorCreated.Parser, new[]{ "ClientPID", "ProxyPID" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ProxyPidRequest), global::Proto.Client.ProxyPidRequest.Parser, new[]{ "ClientPID" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ProxyPidResponse), global::Proto.Client.ProxyPidResponse.Parser, new[]{ "ProxyPID" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientMessageBatch), global::Proto.Client.ClientMessageBatch.Parser, new[]{ "TypeNames", "TargetPids", "Envelopes" }, null, null, null)
           }));
     }
@@ -47,11 +46,11 @@ namespace Proto.Client {
 
   }
   #region Messages
-  public sealed partial class CreateClientProxyActor : pb::IMessage<CreateClientProxyActor> {
-    private static readonly pb::MessageParser<CreateClientProxyActor> _parser = new pb::MessageParser<CreateClientProxyActor>(() => new CreateClientProxyActor());
+  public sealed partial class ProxyPidRequest : pb::IMessage<ProxyPidRequest> {
+    private static readonly pb::MessageParser<ProxyPidRequest> _parser = new pb::MessageParser<ProxyPidRequest>(() => new ProxyPidRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<CreateClientProxyActor> Parser { get { return _parser; } }
+    public static pb::MessageParser<ProxyPidRequest> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -64,21 +63,21 @@ namespace Proto.Client {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public CreateClientProxyActor() {
+    public ProxyPidRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public CreateClientProxyActor(CreateClientProxyActor other) : this() {
+    public ProxyPidRequest(ProxyPidRequest other) : this() {
       clientPID_ = other.clientPID_ != null ? other.clientPID_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public CreateClientProxyActor Clone() {
-      return new CreateClientProxyActor(this);
+    public ProxyPidRequest Clone() {
+      return new ProxyPidRequest(this);
     }
 
     /// <summary>Field number for the "clientPID" field.</summary>
@@ -94,11 +93,11 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as CreateClientProxyActor);
+      return Equals(other as ProxyPidRequest);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(CreateClientProxyActor other) {
+    public bool Equals(ProxyPidRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -148,7 +147,7 @@ namespace Proto.Client {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(CreateClientProxyActor other) {
+    public void MergeFrom(ProxyPidRequest other) {
       if (other == null) {
         return;
       }
@@ -182,11 +181,11 @@ namespace Proto.Client {
 
   }
 
-  public sealed partial class ClientProxyActorCreated : pb::IMessage<ClientProxyActorCreated> {
-    private static readonly pb::MessageParser<ClientProxyActorCreated> _parser = new pb::MessageParser<ClientProxyActorCreated>(() => new ClientProxyActorCreated());
+  public sealed partial class ProxyPidResponse : pb::IMessage<ProxyPidResponse> {
+    private static readonly pb::MessageParser<ProxyPidResponse> _parser = new pb::MessageParser<ProxyPidResponse>(() => new ProxyPidResponse());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<ClientProxyActorCreated> Parser { get { return _parser; } }
+    public static pb::MessageParser<ProxyPidResponse> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -199,33 +198,21 @@ namespace Proto.Client {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ClientProxyActorCreated() {
+    public ProxyPidResponse() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ClientProxyActorCreated(ClientProxyActorCreated other) : this() {
-      clientPID_ = other.clientPID_ != null ? other.clientPID_.Clone() : null;
+    public ProxyPidResponse(ProxyPidResponse other) : this() {
       proxyPID_ = other.proxyPID_ != null ? other.proxyPID_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ClientProxyActorCreated Clone() {
-      return new ClientProxyActorCreated(this);
-    }
-
-    /// <summary>Field number for the "clientPID" field.</summary>
-    public const int ClientPIDFieldNumber = 1;
-    private global::Proto.PID clientPID_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Proto.PID ClientPID {
-      get { return clientPID_; }
-      set {
-        clientPID_ = value;
-      }
+    public ProxyPidResponse Clone() {
+      return new ProxyPidResponse(this);
     }
 
     /// <summary>Field number for the "proxyPID" field.</summary>
@@ -241,18 +228,17 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as ClientProxyActorCreated);
+      return Equals(other as ProxyPidResponse);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(ClientProxyActorCreated other) {
+    public bool Equals(ProxyPidResponse other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (!object.Equals(ClientPID, other.ClientPID)) return false;
       if (!object.Equals(ProxyPID, other.ProxyPID)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -260,7 +246,6 @@ namespace Proto.Client {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (clientPID_ != null) hash ^= ClientPID.GetHashCode();
       if (proxyPID_ != null) hash ^= ProxyPID.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -275,10 +260,6 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (clientPID_ != null) {
-        output.WriteRawTag(10);
-        output.WriteMessage(ClientPID);
-      }
       if (proxyPID_ != null) {
         output.WriteRawTag(18);
         output.WriteMessage(ProxyPID);
@@ -291,9 +272,6 @@ namespace Proto.Client {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (clientPID_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ClientPID);
-      }
       if (proxyPID_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(ProxyPID);
       }
@@ -304,15 +282,9 @@ namespace Proto.Client {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(ClientProxyActorCreated other) {
+    public void MergeFrom(ProxyPidResponse other) {
       if (other == null) {
         return;
-      }
-      if (other.clientPID_ != null) {
-        if (clientPID_ == null) {
-          clientPID_ = new global::Proto.PID();
-        }
-        ClientPID.MergeFrom(other.ClientPID);
       }
       if (other.proxyPID_ != null) {
         if (proxyPID_ == null) {
@@ -331,13 +303,6 @@ namespace Proto.Client {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
-          case 10: {
-            if (clientPID_ == null) {
-              clientPID_ = new global::Proto.PID();
-            }
-            input.ReadMessage(clientPID_);
-            break;
-          }
           case 18: {
             if (proxyPID_ == null) {
               proxyPID_ = new global::Proto.PID();

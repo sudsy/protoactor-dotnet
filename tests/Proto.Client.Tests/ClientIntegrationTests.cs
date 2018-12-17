@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -18,7 +19,8 @@ namespace Proto.Client.Tests
     [Collection("RemoteTests"), Trait("Category", "Remote")]
     public class ClientIntegrationTests
     {
-        private static readonly ClientContext Context = new ClientContext("127.0.0.1", 12222, new RemoteConfig());
+        private static readonly Client client = new Client("127.0.0.1", 12222, new RemoteConfig());
+       
         private readonly RemoteManager _remoteManager;
 
         public ClientIntegrationTests(RemoteManager remoteManager)
@@ -31,6 +33,7 @@ namespace Proto.Client.Tests
         [Fact, DisplayTestMethodName]
         public async void CanSendJsonAndReceiveToClient()
         {
+            
             var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
             var ct = new CancellationTokenSource(30000);
             var tcs = new TaskCompletionSource<bool>();
@@ -40,7 +43,7 @@ namespace Proto.Client.Tests
             });
             
             //This needs to spawn with a connection ID
-            var localActor = Context.Spawn(Props.FromFunc(ctx =>
+            var localActor = await client.SpawnProxyAsync(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is Pong)
                 {
@@ -54,7 +57,7 @@ namespace Proto.Client.Tests
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
             
-            Context.SendEnvelope(remoteActor, envelope, 1);
+            client.SendMessage(remoteActor, envelope, 1);
             await tcs.Task;
         }
     }

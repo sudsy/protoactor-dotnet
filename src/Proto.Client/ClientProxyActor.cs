@@ -29,7 +29,7 @@ namespace Proto.Client
                      Console.WriteLine($"Forwarding Message to stream - {context.Message}");
                      try
                      {
-                         _responseStream.WriteAsync(ClientContext.getClientMessageBatch(_proxyPID, context.Message, Serialization.DefaultSerializerId, context.Sender, context.Headers));    
+                         _responseStream.WriteAsync(Client.getClientMessageBatch(_proxyPID, context.Message, Serialization.DefaultSerializerId, context.Sender, context.Headers));    
                      }catch(Exception ex)
                      {
                          Console.WriteLine(ex.Message);
