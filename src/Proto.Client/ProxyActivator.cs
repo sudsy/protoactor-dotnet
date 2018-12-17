@@ -23,7 +23,7 @@ namespace Proto.Client
                 
                 var clientProxyActorPid = RootContext.Empty.Spawn(props);
                 //Send a return message with the proxy id contained within
-                Console.WriteLine("Sending created message");
+                Console.WriteLine($"Sending created message to {context.Sender} using endpoint {_endpointWriter}");
 
                 var proxyResponse = new ProxyPidResponse()
                 {

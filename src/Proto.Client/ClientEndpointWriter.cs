@@ -17,8 +17,8 @@ namespace Proto.Client
         public Task ReceiveAsync(IContext context)
         {
             if (!(context.Message is RemoteDeliver rd)) return Actor.Done;
-            
-            var batch = Client.getMessageBatch(rd);
+
+            var batch = rd.getMessageBatch();
                 
             var clientBatch = new ClientMessageBatch()
             {
