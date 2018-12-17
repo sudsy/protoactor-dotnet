@@ -98,8 +98,6 @@ namespace Proto.Remote
 
         private static Endpoint EnsureConnected(string address)
         {
-            //If this is a client address check the client registry
-            
             var conn = Connections.GetOrAdd(address, v =>
                 new Lazy<Endpoint>(() =>
                     RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result)
