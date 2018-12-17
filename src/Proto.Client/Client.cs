@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -9,9 +10,10 @@ namespace Proto.Client
     public class Client
     {
         
-        private IClientStreamWriter<ClientMessageBatch> _requestStream;
-        private string _hostname;
-        private int _port;
+        
+        private readonly string _hostname;
+        private readonly int _port;
+        private readonly PID _endpointWriter;
 
         public Client(string hostname, int port, RemoteConfig config)
         {
@@ -27,7 +29,10 @@ namespace Proto.Client
             
             var clientStreams = client.ConnectClient();
 
-            _requestStream = clientStreams.RequestStream;
+            _endpointWriter =
+                RootContext.Empty.Spawn(Props.FromProducer(() =>
+                    new ClientEndpointWriter(clientStreams.RequestStream)));
+            
 
             //Setup listener for incoming stream
             Task.Factory.StartNew(async () =>
@@ -39,7 +44,7 @@ namespace Proto.Client
                     var messageBatch = responseStream.Current;
                     foreach (var envelope in messageBatch.Envelopes)
                     {
-                        var target = messageBatch.TargetPids[envelope.Target];
+                        var target = new PID(ProcessRegistry.Instance.Address,messageBatch.TargetNames[envelope.Target]);
                         var message = Serialization.Deserialize(messageBatch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
                         //todo: Need to convert the headers here
                         var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, null);
@@ -58,7 +63,7 @@ namespace Proto.Client
         public async Task<PID> SpawnProxyAsync(Props props)
         {
             //Get a local PID 
-            var localPID = RootContext.Empty.Spawn(props);
+            var localPid = RootContext.Empty.Spawn(props);
             //Get a remote proxy PID
           
             
@@ -66,7 +71,7 @@ namespace Proto.Client
 
             var createdMessage = await RootContext.Empty.RequestAsync<ProxyPidResponse>(activator, new ProxyPidRequest()
             {
-                ClientPID = localPID
+                ClientPID = localPid
             });
             
             
@@ -79,39 +84,66 @@ namespace Proto.Client
 
         public void SendMessage(PID target, object envelope, int serializerId)
         {
-            //TODO: This really needs to be handled by an actor to make sure we don't write on different threads
+           
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
-            _requestStream.WriteAsync(getClientMessageBatch(target, message, serializerId, sender, header));
+            
+            var env = new RemoteDeliver(header, message, target, sender, serializerId);
+            
+            RootContext.Empty.Send(_endpointWriter, env);
+
         }
         
-        
-        static public ClientMessageBatch getClientMessageBatch(PID target, object message, int serializerId, PID sender = null, Proto.MessageHeader headers = null )
+        internal static MessageBatch getMessageBatch(RemoteDeliver rd)
         {
-            
-            var typeName = Serialization.GetTypeName(message, serializerId);
-            
-            var batch = new ClientMessageBatch();
-            
-            batch.TypeNames.Add(typeName);
-            
-            
-            if (target != null)
+            var envelopes = new List<Remote.MessageEnvelope>();
+            var typeNames = new Dictionary<string,int>();
+            var targetNames = new Dictionary<string,int>();
+            var typeNameList = new List<string>();
+            var targetNameList = new List<string>();
+                
+            var targetName = rd.Target.Id;
+            var serializerId = rd.SerializerId == -1 ? Serialization.DefaultSerializerId : rd.SerializerId;
+
+            if (!targetNames.TryGetValue(targetName, out var targetId))
             {
-                batch.TargetPids.Add(target); //TODO: We shouldn't really be sending a null target, this is really only fro the actor create message should this be a system message instead?
+                targetId = targetNames[targetName] = targetNames.Count;
+                targetNameList.Add(targetName);
             }
 
-            var targetId = target != null ? 0 : -1;
-            
-            batch.Envelopes.Add(new Remote.MessageEnvelope()
+            var typeName = Serialization.GetTypeName(rd.Message, serializerId);
+            if (!typeNames.TryGetValue(typeName, out var typeId))
             {
+                typeId = typeNames[typeName] = typeNames.Count;
+                typeNameList.Add(typeName);
+            }
+
+            Remote.MessageHeader header = null;
+            if (rd.Header != null && rd.Header.Count > 0)
+            {
+                header = new Remote.MessageHeader();
+                header.HeaderData.Add(rd.Header.ToDictionary());
+            }
+
+            var bytes = Serialization.Serialize(rd.Message, serializerId);
+            var envelope = new Remote.MessageEnvelope
+            {
+                MessageData = bytes,
+                Sender = rd.Sender,
                 Target = targetId,
-                TypeId = 0,
+                TypeId = typeId,
                 SerializerId = serializerId,
-                MessageData = Serialization.Serialize(message, serializerId),
-                Sender = sender
-//                MessageHeader = headers
-            });
+                MessageHeader = header,
+            };
+
+            envelopes.Add(envelope);
+                
+            var batch = new MessageBatch();
+            batch.TargetNames.AddRange(targetNameList);
+            batch.TypeNames.AddRange(typeNameList);
+            batch.Envelopes.AddRange(envelopes);
+
             return batch;
         }
+
     }
 }

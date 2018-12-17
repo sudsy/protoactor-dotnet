@@ -27,19 +27,18 @@ namespace Proto.Client {
             "CgxQcm90b3MucHJvdG8SBmNsaWVudBoYUHJvdG8uQWN0b3IvcHJvdG9zLnBy",
             "b3RvGhlQcm90by5SZW1vdGUvcHJvdG9zLnByb3RvIjAKD1Byb3h5UGlkUmVx",
             "dWVzdBIdCgljbGllbnRQSUQYASABKAsyCi5hY3Rvci5QSUQiMAoQUHJveHlQ",
-            "aWRSZXNwb25zZRIcCghwcm94eVBJRBgCIAEoCzIKLmFjdG9yLlBJRCJ1ChJD",
-            "bGllbnRNZXNzYWdlQmF0Y2gSEgoKdHlwZV9uYW1lcxgBIAMoCRIfCgt0YXJn",
-            "ZXRfcGlkcxgCIAMoCzIKLmFjdG9yLlBJRBIqCgllbnZlbG9wZXMYAyADKAsy",
-            "Fy5yZW1vdGUuTWVzc2FnZUVudmVsb3BlMl8KDkNsaWVudFJlbW90aW5nEk0K",
-            "DUNvbm5lY3RDbGllbnQSGi5jbGllbnQuQ2xpZW50TWVzc2FnZUJhdGNoGhou",
-            "Y2xpZW50LkNsaWVudE1lc3NhZ2VCYXRjaCIAKAEwAUIPqgIMUHJvdG8uQ2xp",
-            "ZW50YgZwcm90bzM="));
+            "aWRSZXNwb25zZRIcCghwcm94eVBJRBgCIAEoCzIKLmFjdG9yLlBJRCJKChJD",
+            "bGllbnRNZXNzYWdlQmF0Y2gSDwoHYWRkcmVzcxgBIAEoCRIjCgViYXRjaBgC",
+            "IAEoCzIULnJlbW90ZS5NZXNzYWdlQmF0Y2gyWQoOQ2xpZW50UmVtb3RpbmcS",
+            "RwoNQ29ubmVjdENsaWVudBIaLmNsaWVudC5DbGllbnRNZXNzYWdlQmF0Y2ga",
+            "FC5yZW1vdGUuTWVzc2FnZUJhdGNoIgAoATABQg+qAgxQcm90by5DbGllbnRi",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, global::Proto.Remote.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ProxyPidRequest), global::Proto.Client.ProxyPidRequest.Parser, new[]{ "ClientPID" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ProxyPidResponse), global::Proto.Client.ProxyPidResponse.Parser, new[]{ "ProxyPID" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientMessageBatch), global::Proto.Client.ClientMessageBatch.Parser, new[]{ "TypeNames", "TargetPids", "Envelopes" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientMessageBatch), global::Proto.Client.ClientMessageBatch.Parser, new[]{ "Address", "Batch" }, null, null, null)
           }));
     }
     #endregion
@@ -341,9 +340,8 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientMessageBatch(ClientMessageBatch other) : this() {
-      typeNames_ = other.typeNames_.Clone();
-      targetPids_ = other.targetPids_.Clone();
-      envelopes_ = other.envelopes_.Clone();
+      address_ = other.address_;
+      batch_ = other.batch_ != null ? other.batch_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -352,34 +350,26 @@ namespace Proto.Client {
       return new ClientMessageBatch(this);
     }
 
-    /// <summary>Field number for the "type_names" field.</summary>
-    public const int TypeNamesFieldNumber = 1;
-    private static readonly pb::FieldCodec<string> _repeated_typeNames_codec
-        = pb::FieldCodec.ForString(10);
-    private readonly pbc::RepeatedField<string> typeNames_ = new pbc::RepeatedField<string>();
+    /// <summary>Field number for the "address" field.</summary>
+    public const int AddressFieldNumber = 1;
+    private string address_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<string> TypeNames {
-      get { return typeNames_; }
+    public string Address {
+      get { return address_; }
+      set {
+        address_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
     }
 
-    /// <summary>Field number for the "target_pids" field.</summary>
-    public const int TargetPidsFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Proto.PID> _repeated_targetPids_codec
-        = pb::FieldCodec.ForMessage(18, global::Proto.PID.Parser);
-    private readonly pbc::RepeatedField<global::Proto.PID> targetPids_ = new pbc::RepeatedField<global::Proto.PID>();
+    /// <summary>Field number for the "batch" field.</summary>
+    public const int BatchFieldNumber = 2;
+    private global::Proto.Remote.MessageBatch batch_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Proto.PID> TargetPids {
-      get { return targetPids_; }
-    }
-
-    /// <summary>Field number for the "envelopes" field.</summary>
-    public const int EnvelopesFieldNumber = 3;
-    private static readonly pb::FieldCodec<global::Proto.Remote.MessageEnvelope> _repeated_envelopes_codec
-        = pb::FieldCodec.ForMessage(26, global::Proto.Remote.MessageEnvelope.Parser);
-    private readonly pbc::RepeatedField<global::Proto.Remote.MessageEnvelope> envelopes_ = new pbc::RepeatedField<global::Proto.Remote.MessageEnvelope>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Proto.Remote.MessageEnvelope> Envelopes {
-      get { return envelopes_; }
+    public global::Proto.Remote.MessageBatch Batch {
+      get { return batch_; }
+      set {
+        batch_ = value;
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -395,18 +385,16 @@ namespace Proto.Client {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if(!typeNames_.Equals(other.typeNames_)) return false;
-      if(!targetPids_.Equals(other.targetPids_)) return false;
-      if(!envelopes_.Equals(other.envelopes_)) return false;
+      if (Address != other.Address) return false;
+      if (!object.Equals(Batch, other.Batch)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      hash ^= typeNames_.GetHashCode();
-      hash ^= targetPids_.GetHashCode();
-      hash ^= envelopes_.GetHashCode();
+      if (Address.Length != 0) hash ^= Address.GetHashCode();
+      if (batch_ != null) hash ^= Batch.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -420,9 +408,14 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      typeNames_.WriteTo(output, _repeated_typeNames_codec);
-      targetPids_.WriteTo(output, _repeated_targetPids_codec);
-      envelopes_.WriteTo(output, _repeated_envelopes_codec);
+      if (Address.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Address);
+      }
+      if (batch_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Batch);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -431,9 +424,12 @@ namespace Proto.Client {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      size += typeNames_.CalculateSize(_repeated_typeNames_codec);
-      size += targetPids_.CalculateSize(_repeated_targetPids_codec);
-      size += envelopes_.CalculateSize(_repeated_envelopes_codec);
+      if (Address.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Address);
+      }
+      if (batch_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Batch);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -445,9 +441,15 @@ namespace Proto.Client {
       if (other == null) {
         return;
       }
-      typeNames_.Add(other.typeNames_);
-      targetPids_.Add(other.targetPids_);
-      envelopes_.Add(other.envelopes_);
+      if (other.Address.Length != 0) {
+        Address = other.Address;
+      }
+      if (other.batch_ != null) {
+        if (batch_ == null) {
+          batch_ = new global::Proto.Remote.MessageBatch();
+        }
+        Batch.MergeFrom(other.Batch);
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -460,15 +462,14 @@ namespace Proto.Client {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            typeNames_.AddEntriesFrom(input, _repeated_typeNames_codec);
+            Address = input.ReadString();
             break;
           }
           case 18: {
-            targetPids_.AddEntriesFrom(input, _repeated_targetPids_codec);
-            break;
-          }
-          case 26: {
-            envelopes_.AddEntriesFrom(input, _repeated_envelopes_codec);
+            if (batch_ == null) {
+              batch_ = new global::Proto.Remote.MessageBatch();
+            }
+            input.ReadMessage(batch_);
             break;
           }
         }

@@ -7,14 +7,13 @@ namespace Proto.Client
 {
     public class ClientProxyActor: IActor
     {
-        private PID _proxyPID;
-        private IServerStreamWriter<ClientMessageBatch> _responseStream;
+        private readonly PID _proxyPid;
+        private readonly PID _endpointWriter;
 
-        public ClientProxyActor(PID proxyPID, IServerStreamWriter<ClientMessageBatch> responseStream)
+        public ClientProxyActor(PID proxyPid, PID endpointWriter)
         {
-            //TODO - fix this reference to another actor that manages the stream
-            _proxyPID = proxyPID;
-            _responseStream = responseStream;
+            _proxyPid = proxyPid;
+            _endpointWriter = endpointWriter;
         }
         
         public Task ReceiveAsync(IContext context)
@@ -27,13 +26,11 @@ namespace Proto.Client
                      return Actor.Done;
                  default:
                      Console.WriteLine($"Forwarding Message to stream - {context.Message}");
-                     try
-                     {
-                         _responseStream.WriteAsync(Client.getClientMessageBatch(_proxyPID, context.Message, Serialization.DefaultSerializerId, context.Sender, context.Headers));    
-                     }catch(Exception ex)
-                     {
-                         Console.WriteLine(ex.Message);
-                     }
+                     
+            
+                     var env = new RemoteDeliver(context.Headers, context.Message, _proxyPid, context.Sender, Serialization.DefaultSerializerId);
+                     
+                     context.Send(_endpointWriter, env);
             
                      return Actor.Done;
             }

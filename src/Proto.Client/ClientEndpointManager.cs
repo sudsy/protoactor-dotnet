@@ -15,11 +15,11 @@ namespace Proto.Client
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         }
         
-        private Dictionary<PID, PID> mappingTable = new Dictionary<PID, PID>();
-        private string _clientHostAddress;
+        
+        private readonly string _clientHostAddress;
 
         public override async Task ConnectClient(IAsyncStreamReader<ClientMessageBatch> requestStream,
-            IServerStreamWriter<ClientMessageBatch> responseStream, ServerCallContext context)
+            IServerStreamWriter<MessageBatch> responseStream, ServerCallContext context)
         {
             Console.WriteLine("connected");
             
@@ -27,14 +27,16 @@ namespace Proto.Client
             //Read any messages we receive from the client
             await requestStream.ForEachAsync(clientMessageBatch =>
             {
-                foreach (var envelope in clientMessageBatch.Envelopes)
+                var targetAddress = clientMessageBatch.Address;
+                
+                foreach (var envelope in clientMessageBatch.Batch.Envelopes)
                 {
                     Console.WriteLine("message received");
-                    var message = Serialization.Deserialize(clientMessageBatch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
+                    var message = Serialization.Deserialize(clientMessageBatch.Batch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
                     Console.WriteLine("message deserialized");
                     
                     
-                    var target = clientMessageBatch.TargetPids[envelope.Target]; 
+                    var target = new PID(targetAddress, clientMessageBatch.Batch.TargetNames[envelope.Target]); 
                     if (target.Address == _clientHostAddress)
                     {
                         //Remap host address from the client hosting port to the proper Remote Port
@@ -60,9 +62,11 @@ namespace Proto.Client
         }
         
         
-        private static void SpawnProxyActivator(IServerStreamWriter<ClientMessageBatch> responseStream)
+        private static void SpawnProxyActivator(IServerStreamWriter<MessageBatch> responseStream)
         {
-            var props = Props.FromProducer(() => new ProxyActivator(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+            var endpointWriter = RootContext.Empty.Spawn(Props.FromProducer(() => new ClientHostEndpointWriter(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy));
+            
+            var props = Props.FromProducer(() => new ProxyActivator(endpointWriter)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             RootContext.Empty.SpawnNamed(props, "proxy_activator");
         }
 

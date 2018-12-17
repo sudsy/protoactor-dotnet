@@ -5,7 +5,7 @@ namespace Proto.Client
     public class ClientProxyProcess : Process
     {
         private readonly PID _pid;
-        private Client _client;
+        private readonly Client _client;
 
         public ClientProxyProcess(Client client, PID pid)
         {

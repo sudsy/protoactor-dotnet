@@ -7,32 +7,34 @@ namespace Proto.Client
 {
     public class ProxyActivator: IActor
     {
-        private IServerStreamWriter<ClientMessageBatch> _responseStream;
+        private readonly PID _endpointWriter;
 
-        public ProxyActivator(IServerStreamWriter<ClientMessageBatch> responseStream)
+        public ProxyActivator(PID endpointWriter)
         {
-            _responseStream = responseStream; //TODO: fix this to take an actor as a refence to ensure we write to stream in a thread safe way
+            _endpointWriter = endpointWriter; 
         }
-        public async Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context)
         {
             Console.WriteLine($"Proxy Activator {context.Self} Received Message - {context.Message.GetType()}");
             if (context.Message is ProxyPidRequest request)
             {
                 var props =
-                    Props.FromProducer(() => new ClientProxyActor(request.ClientPID, _responseStream)); //TODO: fix this to take an actor as a refence to ensure we write to stream in a thread safe way
+                    Props.FromProducer(() => new ClientProxyActor(request.ClientPID, _endpointWriter)); 
                 
-                var clientProxyActorPID = RootContext.Empty.Spawn(props);
+                var clientProxyActorPid = RootContext.Empty.Spawn(props);
                 //Send a return message with the proxy id contained within
                 Console.WriteLine("Sending created message");
-                //todo: move this inside the actor started hook - might be able to use a better abstraction here too
-                await _responseStream.WriteAsync(Client.getClientMessageBatch(context.Sender,
-                    new ProxyPidResponse()
-                    {
-                        ProxyPID = clientProxyActorPID
-                    }, Serialization.DefaultSerializerId));
+
+                var proxyResponse = new ProxyPidResponse()
+                {
+                    ProxyPID = clientProxyActorPid
+                };
+                
+                var env = new RemoteDeliver(null, proxyResponse, context.Sender, context.Self, Serialization.DefaultSerializerId);
+                context.Send(_endpointWriter, env);
             }
 
-            
+            return Actor.Done;
         }
     }
 }

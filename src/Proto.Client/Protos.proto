@@ -13,13 +13,14 @@ message ProxyPidResponse {
     actor.PID proxyPID = 2;
 }
 
+
+
 message ClientMessageBatch {
-    repeated string type_names = 1;
-    repeated actor.PID target_pids = 2;
-    repeated remote.MessageEnvelope envelopes = 3;
+    string address = 1;
+    remote.MessageBatch batch = 2;
 }
 
 
 service ClientRemoting {
-    rpc ConnectClient (stream ClientMessageBatch) returns (stream ClientMessageBatch) {}
+    rpc ConnectClient (stream ClientMessageBatch) returns (stream remote.MessageBatch) {}
 }  
