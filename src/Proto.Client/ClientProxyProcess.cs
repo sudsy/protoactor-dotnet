@@ -5,11 +5,10 @@ namespace Proto.Client
     public class ClientProxyProcess : Process
     {
         private readonly PID _pid;
-        private readonly Client _client;
+        
 
-        public ClientProxyProcess(Client client, PID pid)
+        public ClientProxyProcess( PID pid)
         {
-            _client = client;
             _pid = pid;
         }
 
@@ -20,7 +19,7 @@ namespace Proto.Client
         private void Send(object msg)
         {
            
-            _client.SendMessage(_pid, msg, Serialization.DefaultSerializerId);
+            Client.SendMessage(_pid, msg, Serialization.DefaultSerializerId);
             
         }
     }

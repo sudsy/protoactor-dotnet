@@ -9,14 +9,14 @@ using Proto.Remote;
 
 namespace Proto.Client
 {
-    public class Client
+    public static  class Client
     {
         
         
-        private readonly string _hostname;
-        private readonly int _port;
-        private readonly PID _endpointWriter;
-        private readonly ConcurrentDictionary<string, PID> _remoteProxyTable = new ConcurrentDictionary<string, PID>();
+        private static string _hostname;
+        private static int _port;
+        private static PID _endpointWriter;
+        private static readonly ConcurrentDictionary<string, PID> _remoteProxyTable = new ConcurrentDictionary<string, PID>();
 
 
         static Client()
@@ -24,14 +24,14 @@ namespace Proto.Client
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         }
         
-        public Client(string hostname, int port, RemoteConfig config)
+        public static void Start(string hostname, int port, RemoteConfig config)
         {
             _hostname = hostname;
             _port = port;
             
            
             
-            ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientProxyProcess(this, pid));
+            ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientProxyProcess(pid));
             
             Channel channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
             var client = new ClientRemoting.ClientRemotingClient(channel);
@@ -68,7 +68,7 @@ namespace Proto.Client
             
         }
 
-        public async Task<PID> GetProxyPID(PID localPID)
+        public static async Task<PID> GetProxyPID(PID localPID)
         {
             //This needs a cache
             var localPidString = localPID.ToString();
@@ -98,7 +98,7 @@ namespace Proto.Client
   
  
 
-        public void SendMessage(PID target, object envelope, int serializerId)
+        public static void SendMessage(PID target, object envelope, int serializerId)
         {
            
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);

@@ -22,11 +22,11 @@ namespace Proto.Client.Tests
         
        
         private readonly RemoteManager _remoteManager;
-        private Client _client;
+        
 
         public ClientIntegrationTests(RemoteManager remoteManager)
         {
-            _client = new Client("127.0.0.1", 12222, new RemoteConfig());
+            Client.Start("127.0.0.1", 12222, new RemoteConfig());
             _remoteManager = remoteManager;
         }
 
@@ -61,7 +61,7 @@ namespace Proto.Client.Tests
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
             
-            _client.SendMessage(remoteActor, envelope, 1);
+            Client.SendMessage(remoteActor, envelope, 1);
             await tcs.Task;
         }
 

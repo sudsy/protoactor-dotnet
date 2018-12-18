@@ -61,7 +61,7 @@ namespace Proto.Remote.Tests.Node
 
         public Task ReceiveAsync(IContext context)
         {
-            Console.WriteLine($"Echo Actor Received - {context.Message} from {context.Sender}");
+            
             switch (context.Message)
             {
                 case Ping ping:
