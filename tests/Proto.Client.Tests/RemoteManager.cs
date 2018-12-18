@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using Proto.Client;
+
+using Proto.Remote;
 using Xunit;
 
-namespace Proto.Remote.Tests
+namespace Proto.Client.Tests
 {
     public class RemoteManager : IDisposable
     {
@@ -16,7 +17,7 @@ namespace Proto.Remote.Tests
 
         public RemoteManager()
         {
-            Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+            Serialization.RegisterFileDescriptor(Proto.Remote.Tests.Messages.ProtosReflection.Descriptor);
             ProvisionNode("127.0.0.1", 12000, 12222);
 
             
