@@ -37,7 +37,7 @@ namespace Proto.Client.Tests
         {
             
             
-            var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
+            var clientHostActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
             var ct = new CancellationTokenSource(30000);
             var tcs = new TaskCompletionSource<bool>();
             ct.Token.Register(() =>
@@ -61,16 +61,16 @@ namespace Proto.Client.Tests
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
             
-            Client.SendMessage(remoteActor, envelope, 1);
+            Client.SendMessage(clientHostActor, envelope, 1);
             await tcs.Task;
         }
 
         [Fact, DisplayTestMethodName]
-        public async void CanRequestAsyncFromClientActor()
+        public async void CanRequestAsyncToRemoteFromClientActor()
         {
             
             
-            var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
+            var remoteActor = new PID(_remoteManager.RemoteNode.Address, "EchoActorInstance");
             
             var ct = new CancellationTokenSource(30000);
             var tcs = new TaskCompletionSource<bool>();
@@ -87,7 +87,7 @@ namespace Proto.Client.Tests
                    
                     var result = await ctx.RequestAsync<Pong>(remoteActor, new Ping()
                     {
-                        Message = "Hello from inside"
+                        Message = "Hello to remote from inside"
                     });
                     tcs.SetResult(true);
                     ctx.Self.Stop();

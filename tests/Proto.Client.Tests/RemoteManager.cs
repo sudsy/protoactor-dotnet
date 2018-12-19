@@ -11,20 +11,23 @@ namespace Proto.Client.Tests
     public class RemoteManager : IDisposable
     {
         private static string DefaultNodeAddress = "127.0.0.1:12000";
+        
+        private static string RemoteNodeAddress = "127.0.0.1:12001";
         public Dictionary<string, System.Diagnostics.Process> Nodes = new Dictionary<string, System.Diagnostics.Process>();
 
         public (string Address, System.Diagnostics.Process Process) DefaultNode => (DefaultNodeAddress, Nodes[DefaultNodeAddress]);
+        public (string Address, System.Diagnostics.Process Process) RemoteNode => (RemoteNodeAddress, Nodes[RemoteNodeAddress]);
 
         public RemoteManager()
         {
             Serialization.RegisterFileDescriptor(Proto.Remote.Tests.Messages.ProtosReflection.Descriptor);
             ProvisionNode("127.0.0.1", 12000, 12222);
-
+            ProvisionNode("127.0.0.1", 12001);
             
             
            
             
-            Thread.Sleep(3000);
+            Thread.Sleep(6000);
         }
 
         public void Dispose()
@@ -36,7 +39,7 @@ namespace Proto.Client.Tests
             }
         }
 
-        public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000, int clientPort = 12222)
+        public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000, int clientPort = 0)
         {
             var address = $"{host}:{port}";
             var buildConfig = "Debug";
@@ -52,11 +55,12 @@ namespace Proto.Client.Tests
                 throw new FileNotFoundException(nodeDllPath);
             }
 
+            var clientPortArgument = (clientPort == 0) ? "" : $"--clientport {clientPort}";
             var process = new System.Diagnostics.Process
             {
                 StartInfo =
                 {
-                    Arguments = $"{nodeDllPath} --host {host} --port {port} --clientport {clientPort}",
+                    Arguments = $"{nodeDllPath} --host {host} --port {port} {clientPortArgument}",
                     CreateNoWindow = false,
                     UseShellExecute = false,
                     FileName = "dotnet"

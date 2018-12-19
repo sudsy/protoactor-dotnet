@@ -65,6 +65,7 @@ namespace Proto.Client
                     else
                     {
                         //todo: We could have forwarded this batch without deserializing contents if we had access to SendEnvelopesAsync from EndPointWriter
+                        //todo: If we use a naming prefix for proxies, we could tell if we are sending to another client proxy and avoid deserialization there too
                         Remote.Remote.SendMessage(target, forwardingEnvelope, Serialization.DefaultSerializerId);
                     }
                    
