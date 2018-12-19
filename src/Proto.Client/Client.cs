@@ -105,7 +105,7 @@ namespace Proto.Client
 
             var remoteProxyID = sender;
             
-            if (!(message is ProxyPidRequest))
+            if (!(message is ProxyPidRequest) && sender != null)
             {
                 remoteProxyID = GetProxyPID(sender).Result;
             }
