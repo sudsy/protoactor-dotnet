@@ -57,8 +57,17 @@ namespace Proto.Client
                         header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
                     }
                    
-                    var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                    RootContext.Empty.Send(target, localEnvelope);
+                    var forwardingEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                    if (target.Address.Equals(ProcessRegistry.Instance.Address))
+                    {
+                        RootContext.Empty.Send(target, forwardingEnvelope);
+                    }
+                    else
+                    {
+                        //todo: We could have forwarded this batch without deserializing contents if we had access to SendEnvelopesAsync from EndPointWriter
+                        Remote.Remote.SendMessage(target, forwardingEnvelope, Serialization.DefaultSerializerId);
+                    }
+                   
                    
                    
                     

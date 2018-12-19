@@ -97,8 +97,6 @@ namespace Proto.Client.Tests
             }));
             
            
-            
-           
             await tcs.Task;
         }
     }
