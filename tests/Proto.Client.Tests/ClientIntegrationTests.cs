@@ -26,7 +26,7 @@ namespace Proto.Client.Tests
 
         public ClientIntegrationTests(RemoteManager remoteManager)
         {
-            Client.Start("127.0.0.1", 12222, new RemoteConfig());
+            Client.Connect("127.0.0.1", 12222, new RemoteConfig());
             _remoteManager = remoteManager;
         }
 

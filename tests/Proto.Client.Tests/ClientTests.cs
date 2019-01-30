@@ -16,7 +16,14 @@ namespace Proto.Client.Tests
 
     public class ClientTests
     {
-      
+
+        [Fact, DisplayTestMethodName]
+        public async void TimeoutOnConnectFailure()
+        {
+            
+            await Assert.ThrowsAsync<TaskCanceledException>(async () => { await Client.Connect("127.0.0.1", 12222, new RemoteConfig(), 1000); });
+
+        }
 
         [Fact, DisplayTestMethodName]
         public async void CanCreateClientProxyActor()

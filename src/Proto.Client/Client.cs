@@ -24,16 +24,20 @@ namespace Proto.Client
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         }
         
-        public static void Start(string hostname, int port, RemoteConfig config)
+        public static async Task Connect(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
             _hostname = hostname;
             _port = port;
+            
             
            
             
             ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientProxyProcess(pid));
             
             Channel channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
+
+            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(connectionTimeoutMs));
+            
             var client = new ClientRemoting.ClientRemotingClient(channel);
             
             
@@ -43,9 +47,9 @@ namespace Proto.Client
                 RootContext.Empty.Spawn(Props.FromProducer(() =>
                     new ClientEndpointWriter(clientStreams.RequestStream)));
             
-
+           
             //Setup listener for incoming stream
-            Task.Factory.StartNew(async () =>
+            var streamListenerTask = Task.Factory.StartNew(async () =>
             {
                 var responseStream = clientStreams.ResponseStream;
                 while (await responseStream.MoveNext(CancellationToken.None)
@@ -64,6 +68,8 @@ namespace Proto.Client
                    
                 }
             });
+            
+            
             
             
         }
