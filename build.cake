@@ -1,6 +1,6 @@
 #addin Cake.Git
 
-var packageVersion = "0.2.0";
+var packageVersion = "0.2.1";
 
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
@@ -36,6 +36,7 @@ Task("PatchVersion")
             if (versionSuffix.Length > 20) {
                 versionSuffix = versionSuffix.Substring(0, 20);
             }
+            versionSuffix = versionSuffix.Replace("_", "-");
             packageVersion += versionSuffix;
         }
         Information("Version: " + packageVersion);        

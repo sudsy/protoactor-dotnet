@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0</TargetFrameworks>
-        <Version>0.0.13-dev</Version>
+        <Version>0.2.1-proto-client</Version>
         <RootNamespace>Proto</RootNamespace>
     </PropertyGroup>
 

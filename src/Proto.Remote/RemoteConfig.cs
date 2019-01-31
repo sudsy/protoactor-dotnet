@@ -50,5 +50,7 @@ namespace Proto.Remote
         /// the external port in order for other systems to be able to connect to it.
         /// </summary>
         public int? AdvertisedPort { get; set; }
+        
+        public IEnumerable<ServerServiceDefinition> AdditionalServices { get; set; }
     }
 }

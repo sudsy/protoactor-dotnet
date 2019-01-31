@@ -26,7 +26,7 @@ namespace Proto.Client.Tests
 
         public ClientIntegrationTests(RemoteManager remoteManager)
         {
-            Client.Connect("127.0.0.1", 12222, new RemoteConfig());
+           
             _remoteManager = remoteManager;
         }
 
@@ -36,7 +36,7 @@ namespace Proto.Client.Tests
         public async void CanSendJsonAndReceiveToClient()
         {
             
-            
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
             var clientHostActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
             var ct = new CancellationTokenSource(30000);
             var tcs = new TaskCompletionSource<bool>();
@@ -69,7 +69,7 @@ namespace Proto.Client.Tests
         public async void CanRequestAsyncToRemoteFromClientActor()
         {
             
-            
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
             var remoteActor = new PID(_remoteManager.RemoteNode.Address, "EchoActorInstance");
             
             var ct = new CancellationTokenSource(30000);

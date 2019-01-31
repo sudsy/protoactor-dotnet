@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Grpc.Core;
@@ -24,18 +25,13 @@ namespace Proto.Client
         {
 
             var clientEndpointManager = new ClientEndpointManager($"{hostname}:{port}");
-            var server = new Server
+            config.AdditionalServices = new List<ServerServiceDefinition>
             {
-                Services = { ClientRemoting.BindService(clientEndpointManager) },
-                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
+                ClientRemoting.BindService(clientEndpointManager)
             };
             
-           
+            Remote.Remote.Start(hostname, port, config);
             
-            //We need a test to make sure that normal remote is started - maybe test to see if the regular activator is registered?
-            
-            server.Start();
-
             
         }
         

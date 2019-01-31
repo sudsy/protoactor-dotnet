@@ -14,7 +14,8 @@ namespace Proto.Remote.Tests.Node
             var app = new CommandLineApplication();
             var hostOption = app.Option("-h|--host", "host", CommandOptionType.SingleValue);
             var portArgument = app.Option("-p|--port", "port", CommandOptionType.SingleValue);
-            var clientProxyPortArgument = app.Option("-c|--clientport", "port", CommandOptionType.SingleValue);
+            var clientHostArgument = app.Option("-c|--clienthost", "Start Client Host", CommandOptionType.NoValue);
+            var listenOnAllAddressesArgument = app.Option("-a|--alladdresses", "Listen On All Addresses", CommandOptionType.NoValue);
 
             app.OnExecute(() => {
                 var host = hostOption.Value() ?? "127.0.0.1";
@@ -27,13 +28,23 @@ namespace Proto.Remote.Tests.Node
                 }
 
                 Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-                Remote.Start(host, port);
 
+                var remoteConfig = new RemoteConfig();
                 
-                if (clientProxyPortArgument.HasValue())
+                if (listenOnAllAddressesArgument.HasValue())
                 {
-                    Console.WriteLine("Starting Client Proxy");
-                    ClientHost.Start("127.0.0.1", Convert.ToInt32(clientProxyPortArgument.Values[0]));    
+                    remoteConfig.AdvertisedHostname = host;
+                    host = "0.0.0.0";
+                }
+                
+                if (clientHostArgument.HasValue())
+                {
+                    
+                    ClientHost.Start(host, port, remoteConfig);    
+                }
+                else
+                {
+                    Remote.Start(host, port, remoteConfig);
                 }
                 
                 

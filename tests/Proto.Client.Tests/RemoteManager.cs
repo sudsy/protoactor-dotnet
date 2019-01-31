@@ -21,7 +21,7 @@ namespace Proto.Client.Tests
         public RemoteManager()
         {
             Serialization.RegisterFileDescriptor(Proto.Remote.Tests.Messages.ProtosReflection.Descriptor);
-            ProvisionNode("127.0.0.1", 12000, 12222);
+            ProvisionNode("127.0.0.1", 12000, true);
             ProvisionNode("127.0.0.1", 12001);
             
             
@@ -39,7 +39,7 @@ namespace Proto.Client.Tests
             }
         }
 
-        public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000, int clientPort = 0)
+        public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000, bool clientHost = false)
         {
             var address = $"{host}:{port}";
             var buildConfig = "Debug";
@@ -55,12 +55,12 @@ namespace Proto.Client.Tests
                 throw new FileNotFoundException(nodeDllPath);
             }
 
-            var clientPortArgument = (clientPort == 0) ? "" : $"--clientport {clientPort}";
+            var clientHostArgument = clientHost ? "--clienthost" : "";
             var process = new System.Diagnostics.Process
             {
                 StartInfo =
                 {
-                    Arguments = $"{nodeDllPath} --host {host} --port {port} {clientPortArgument}",
+                    Arguments = $"{nodeDllPath} --host {host} --port {port} --alladdresses {clientHostArgument}",
                     CreateNoWindow = false,
                     UseShellExecute = false,
                     FileName = "dotnet"

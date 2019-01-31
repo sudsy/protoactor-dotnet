@@ -23,6 +23,8 @@ namespace Proto.Remote
         public static PID ActivatorPid { get; private set; }
 
         private static EndpointReader _endpointReader;
+        
+        
 
         public static string[] GetKnownKinds()
         {
@@ -58,8 +60,16 @@ namespace Proto.Remote
             _server = new Server
             {
                 Services = { Remoting.BindService(_endpointReader) },
-                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
+                Ports = { new ServerPort(hostname, port, config.ServerCredentials) },
+                
             };
+            if (config.AdditionalServices != null)
+            {
+                foreach (var configAdditionalService in config.AdditionalServices)
+                {
+                    _server.Services.Add(configAdditionalService);
+                }
+            }
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
