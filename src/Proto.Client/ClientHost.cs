@@ -10,7 +10,8 @@ namespace Proto.Client
 {
     public class ClientHost 
     {
-
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(ClientHost).FullName);
+        
         static ClientHost()
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
@@ -23,13 +24,16 @@ namespace Proto.Client
         
         public static void Start(string hostname, int port, RemoteConfig config)
         {
-
-            var clientEndpointManager = new ClientEndpointManager($"{hostname}:{port}");
+            Logger.LogDebug($"Starting Client Host");
+            var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? port}";
+//            ProcessRegistry.Instance.Address = addr;
+            var clientEndpointManager = new ClientEndpointManager(addr);
             config.AdditionalServices = new List<ServerServiceDefinition>
             {
                 ClientRemoting.BindService(clientEndpointManager)
             };
             
+            Logger.LogDebug($"Starting Remote with Client Host");
             Remote.Remote.Start(hostname, port, config);
             
             

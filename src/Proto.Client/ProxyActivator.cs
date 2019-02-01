@@ -15,6 +15,7 @@ namespace Proto.Client
         }
         public Task ReceiveAsync(IContext context)
         {
+            Console.WriteLine($"Proxy Activator Received Message {context.Message}");
            
             if (context.Message is ProxyPidRequest request)
             {

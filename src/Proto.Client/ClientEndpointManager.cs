@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Client
 {
     public class ClientEndpointManager: ClientRemoting.ClientRemotingBase
     {
+        
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(ClientEndpointManager).FullName);
+        
         public ClientEndpointManager(string clientHostAddress)
         {
             _clientHostAddress = clientHostAddress;
@@ -22,18 +26,23 @@ namespace Proto.Client
             IServerStreamWriter<MessageBatch> responseStream, ServerCallContext context)
         {
             
-            
+            Logger.LogDebug($"Spawning Proxy Activator");
             var proxyActivator = SpawnProxyActivator(responseStream);
             //Read any messages we receive from the client
             await requestStream.ForEachAsync(clientMessageBatch =>
             {
+                
+                
                 var targetAddress = clientMessageBatch.Address;
+                
+                Logger.LogDebug($"Received Batch for {targetAddress}");
                 
                 foreach (var envelope in clientMessageBatch.Batch.Envelopes)
                 {
                     
                     var message = Serialization.Deserialize(clientMessageBatch.Batch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
                     
+                    Logger.LogDebug($"Batch Message {message}");
                     
                     var target = new PID(targetAddress, clientMessageBatch.Batch.TargetNames[envelope.Target]); 
                     
@@ -42,11 +51,14 @@ namespace Proto.Client
                         target = proxyActivator;
                     }
                     
-                    if (target.Address == _clientHostAddress)
-                    {
-                        //Remap host address from the client hosting port to the proper Remote Port
-                        target.Address = ProcessRegistry.Instance.Address;
-                    }
+                    Logger.LogDebug($"Target is {target}");
+                    
+                    //Not needed any more because we are on the same port
+//                    if (target.Address == _clientHostAddress)
+//                    {
+//                        //Remap host address from the client hosting port to the proper Remote Port
+//                        target.Address = ProcessRegistry.Instance.Address;
+//                    }
 
                    
                     
@@ -60,10 +72,12 @@ namespace Proto.Client
                     var forwardingEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
                     if (target.Address.Equals(ProcessRegistry.Instance.Address))
                     {
+                        Logger.LogDebug($"Sending message to local target {target}");
                         RootContext.Empty.Send(target, forwardingEnvelope);
                     }
                     else
                     {
+                        Logger.LogDebug($"Sending message to remote target {target}");
                         //todo: We could have forwarded this batch without deserializing contents if we had access to SendEnvelopesAsync from EndPointWriter
                         //todo: If we use a naming prefix for proxies, we could tell if we are sending to another client proxy and avoid deserialization there too
                         Remote.Remote.SendMessage(target, forwardingEnvelope, Serialization.DefaultSerializerId);

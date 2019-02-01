@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.CommandLineUtils;
+using Microsoft.Extensions.Logging;
 using Proto.Client;
 using Proto.Remote.Tests.Messages;
 
@@ -11,6 +12,7 @@ namespace Proto.Remote.Tests.Node
         static void Main(string[] args)
         {
             var context = new RootContext();
+            Log.SetLoggerFactory(new LoggerFactory().AddConsole());
             var app = new CommandLineApplication();
             var hostOption = app.Option("-h|--host", "host", CommandOptionType.SingleValue);
             var portArgument = app.Option("-p|--port", "port", CommandOptionType.SingleValue);
@@ -40,7 +42,7 @@ namespace Proto.Remote.Tests.Node
                 if (clientHostArgument.HasValue())
                 {
                     
-                    ClientHost.Start(host, port, remoteConfig);    
+                    ClientHost.Start("0.0.0.0", port, remoteConfig);    
                 }
                 else
                 {

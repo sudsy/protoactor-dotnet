@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Testing;
 using Grpc.Core.Utils;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Proto.Remote;
 using Proto.Remote.Tests;
 using Proto.Remote.Tests.Messages;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Client.Tests
 {
@@ -24,10 +26,11 @@ namespace Proto.Client.Tests
         private readonly RemoteManager _remoteManager;
         
 
-        public ClientIntegrationTests(RemoteManager remoteManager)
+        public ClientIntegrationTests(RemoteManager remoteManager, ITestOutputHelper testOutputHelper)
         {
            
             _remoteManager = remoteManager;
+           
         }
 
         
@@ -98,6 +101,14 @@ namespace Proto.Client.Tests
             
            
             await tcs.Task;
+        }
+
+        [Fact, DisplayTestMethodName]
+        public async void CanGetProxyActorID()
+        {
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
+            var localPID = RootContext.Empty.Spawn((Props.FromFunc(ctx => Actor.Done)));
+            var proxyPID = await Client.GetProxyPID(localPID);
         }
     }
 }
