@@ -42,7 +42,7 @@ namespace Proto.Remote.Tests.Node
                 if (clientHostArgument.HasValue())
                 {
                     
-                    ClientHost.Start("0.0.0.0", port, remoteConfig);    
+                    ClientHost.Start(host, port, remoteConfig);    
                 }
                 else
                 {
