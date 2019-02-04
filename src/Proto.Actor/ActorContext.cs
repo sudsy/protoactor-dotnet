@@ -207,6 +207,12 @@ namespace Proto
             SendUserMessage(target, messageEnvelope);
         }
 
+        public void Request(PID target, object message, PID sender)
+        {
+            var messageEnvelope = new MessageEnvelope(message, sender, null);
+            SendUserMessage(target, messageEnvelope);
+        }
+
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
             => RequestAsync(target, message, new FutureProcess<T>(timeout));
 
@@ -302,8 +308,8 @@ namespace Proto
         {
             if (_state == ContextState.Stopped)
             {
-                //already stopped
-                Logger.LogError("Actor already stopped, ignore user message {0}", msg);
+                //already stopped, send message to deadletter process
+                DeadLetterProcess.Instance.SendUserMessage(this.Self, msg);
                 return Done;
             }
 
