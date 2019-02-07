@@ -33,7 +33,7 @@ namespace Proto.Client
                 ClientRemoting.BindService(clientEndpointManager)
             };
             
-            Logger.LogDebug($"Starting Remote with Client Host");
+            Logger.LogDebug($"Starting Remote with Client Host {addr}");
             Remote.Remote.Start(hostname, port, config);
             
             

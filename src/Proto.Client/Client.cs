@@ -17,6 +17,7 @@ namespace Proto.Client
         private static int _port;
         private static PID _endpointWriter;
         private static readonly ConcurrentDictionary<string, PID> _remoteProxyTable = new ConcurrentDictionary<string, PID>();
+        private static string _clientHostAddress;
 
 
         static Client()
@@ -40,7 +41,7 @@ namespace Proto.Client
             
             var client = new ClientRemoting.ClientRemotingClient(channel);
             
-            
+          
             var clientStreams = client.ConnectClient();
 
             _endpointWriter =
@@ -121,8 +122,47 @@ namespace Proto.Client
             RootContext.Empty.Send(_endpointWriter, env);
 
         }
-        
-        
 
+
+        public static  Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
+        {
+            return Remote.Remote.SpawnNamedAsync(address, name, kind, timeout);
+        }
+        
+        public static  Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout)
+        {
+            return Remote.Remote.SpawnAsync(address, kind, timeout);
+        }
+
+        public static async Task<string> GetClientHostAddress()
+        {
+            if (_clientHostAddress != null)
+            {
+                return _clientHostAddress;
+            }
+            
+            
+            var activator = new PID($"{_hostname}:{_port}", "client_host_address_responder");
+            
+            var clientHostResponseMessage = await RootContext.Empty.RequestAsync<ClientHostAddressResponse>(activator, new ClientHostAddressRequest());
+
+            _clientHostAddress = clientHostResponseMessage.Address;
+            
+            return _clientHostAddress;
+
+        }
+
+        public static async Task<ActorPidResponse> SpawnOnClientHostAsync(string name, string kind, TimeSpan timeout)
+        {
+            var hostAddress = await GetClientHostAddress();
+            return await SpawnNamedAsync(hostAddress, name, kind, timeout);
+            
+        }
+        
+        public static async Task<ActorPidResponse> SpawnOnClientHostAsync(string kind, TimeSpan timeout)
+        {
+            var hostAddress = await GetClientHostAddress();
+            return await SpawnAsync(hostAddress, kind, timeout);
+        }
     }
 }

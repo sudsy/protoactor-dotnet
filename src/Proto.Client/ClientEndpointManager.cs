@@ -16,6 +16,7 @@ namespace Proto.Client
         public ClientEndpointManager(string clientHostAddress)
         {
             _clientHostAddress = clientHostAddress;
+          
             
         }
         
@@ -28,6 +29,7 @@ namespace Proto.Client
             
             Logger.LogDebug($"Spawning Proxy Activator");
             var proxyActivator = SpawnProxyActivator(responseStream);
+            var clientHostAddressResponder = SpawnClientHostAddressResponder();
             //Read any messages we receive from the client
             await requestStream.ForEachAsync(clientMessageBatch =>
             {
@@ -49,6 +51,11 @@ namespace Proto.Client
                     if (target.Id == "proxy_activator")
                     {
                         target = proxyActivator;
+                    }
+
+                    if (target.Id == "client_host_address_responder")
+                    {
+                        target = clientHostAddressResponder;
                     }
                     
                     Logger.LogDebug($"Target is {target}");
@@ -72,7 +79,7 @@ namespace Proto.Client
                     var forwardingEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
                     if (target.Address.Equals(ProcessRegistry.Instance.Address))
                     {
-                        Logger.LogDebug($"Sending message to local target {target}");
+                        Logger.LogDebug($"Sending message {message} to local target {target} from {envelope.Sender}");
                         RootContext.Empty.Send(target, forwardingEnvelope);
                     }
                     else
@@ -92,8 +99,21 @@ namespace Proto.Client
 
             });
         }
-        
-        
+
+        private PID SpawnClientHostAddressResponder()
+        {
+            return RootContext.Empty.Spawn(Props.FromFunc(context =>
+            {
+                if (context.Message is ClientHostAddressRequest)
+                {
+                    context.Respond(new ClientHostAddressResponse(){Address = ProcessRegistry.Instance.Address});
+                }
+
+                return Actor.Done;
+            }));
+        }
+
+
         private static PID SpawnProxyActivator(IServerStreamWriter<MessageBatch> responseStream)
         {
             

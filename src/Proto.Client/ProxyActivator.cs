@@ -1,12 +1,14 @@
 using System;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Client
 {
     public class ProxyActivator: IActor
     {
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(ClientHost).FullName);
         private readonly PID _endpointWriter;
 
         public ProxyActivator(PID endpointWriter)
@@ -15,7 +17,7 @@ namespace Proto.Client
         }
         public Task ReceiveAsync(IContext context)
         {
-            Console.WriteLine($"Proxy Activator Received Message {context.Message}");
+            Logger.LogDebug($"Proxy Activator Received Message {context.Message}");
            
             if (context.Message is ProxyPidRequest request)
             {

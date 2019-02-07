@@ -110,5 +110,36 @@ namespace Proto.Client.Tests
             var localPID = RootContext.Empty.Spawn((Props.FromFunc(ctx => Actor.Done)));
             var proxyPID = await Client.GetProxyPID(localPID);
         }
+        
+        
+        [Fact, DisplayTestMethodName]
+        public async void CanSpawnRemoteActor()
+        {
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
+            var remoteActorName = Guid.NewGuid().ToString();
+            var remoteActorResp = await Client.SpawnNamedAsync(_remoteManager.DefaultNode.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActor = remoteActorResp.Pid;
+            var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
+            Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
+        }
+        
+        [Fact, DisplayTestMethodName]
+        public async void CanGetClientHostAddress()
+        {
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
+            var address = await Client.GetClientHostAddress();
+            Assert.Equal("127.0.0.1:12000", address);
+        }
+        
+        [Fact, DisplayTestMethodName]
+        public async void CanSpawnClientHostActor()
+        {
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
+            var remoteActorName = Guid.NewGuid().ToString();
+            var remoteActorResp = await Client.SpawnOnClientHostAsync( remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActor = remoteActorResp.Pid;
+            var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
+            Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
+        }
     }
 }

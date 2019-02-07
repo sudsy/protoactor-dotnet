@@ -60,7 +60,7 @@ namespace Proto.Client.Tests
             {
                 StartInfo =
                 {
-                    Arguments = $"{nodeDllPath} --host {host} --port {port} --alladdresses {clientHostArgument}",
+                    Arguments = $"{nodeDllPath} --host {host} --port {port} {clientHostArgument}",
                     CreateNoWindow = false,
                     UseShellExecute = false,
                     FileName = "dotnet"
