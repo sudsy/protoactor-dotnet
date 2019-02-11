@@ -13,12 +13,7 @@ message ProxyPidResponse {
     actor.PID proxyPID = 2;
 }
 
-message ClientHostAddressRequest {
-    
-}
-
-message ClientHostAddressResponse {
-    string address = 1;
+message ClientConnectionStarted {
 }
 
 

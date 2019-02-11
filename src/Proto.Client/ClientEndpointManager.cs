@@ -27,102 +27,99 @@ namespace Proto.Client
             IServerStreamWriter<MessageBatch> responseStream, ServerCallContext context)
         {
             
-            Logger.LogDebug($"Spawning Proxy Activator");
-            var proxyActivator = SpawnProxyActivator(responseStream);
-            var clientHostAddressResponder = SpawnClientHostAddressResponder();
-            //Read any messages we receive from the client
-            await requestStream.ForEachAsync(clientMessageBatch =>
+            Logger.LogDebug($"Spawning Client EndpointWriter");
+            var clientEndpointWriter = SpawnClientEndpointWriter(responseStream);
+            
+            try
             {
-                
-                
-                var targetAddress = clientMessageBatch.Address;
-                
-                Logger.LogDebug($"Received Batch for {targetAddress}");
-                
-                foreach (var envelope in clientMessageBatch.Batch.Envelopes)
+                while (await requestStream.MoveNext())
                 {
-                    
-                    var message = Serialization.Deserialize(clientMessageBatch.Batch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
-                    
-                    Logger.LogDebug($"Batch Message {message}");
-                    
-                    var target = new PID(targetAddress, clientMessageBatch.Batch.TargetNames[envelope.Target]); 
-                    
-                    if (target.Id == "proxy_activator")
-                    {
-                        target = proxyActivator;
-                    }
+                    var clientMessageBatch = requestStream.Current;
 
-                    if (target.Id == "client_host_address_responder")
-                    {
-                        target = clientHostAddressResponder;
-                    }
-                    
-                    Logger.LogDebug($"Target is {target}");
-                    
-                    //Not needed any more because we are on the same port
-//                    if (target.Address == _clientHostAddress)
-//                    {
-//                        //Remap host address from the client hosting port to the proper Remote Port
-//                        target.Address = ProcessRegistry.Instance.Address;
-//                    }
+                    var targetAddress = clientMessageBatch.Address;
 
-                   
-                    
-                    //Forward the message to the correct endpoint
-                    Proto.MessageHeader header = null;
-                    if (envelope.MessageHeader != null)
+                    Logger.LogDebug($"Received Batch for {targetAddress}");
+
+                    foreach (var envelope in clientMessageBatch.Batch.Envelopes)
                     {
-                        header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+
+                        var message = Serialization.Deserialize(clientMessageBatch.Batch.TypeNames[envelope.TypeId],
+                            envelope.MessageData, envelope.SerializerId);
+
+                        Logger.LogDebug($"Batch Message {message}");
+
+                        var target = new PID(targetAddress, clientMessageBatch.Batch.TargetNames[envelope.Target]);
+
+                      
+                        Logger.LogDebug($"Target is {target}");
+
+                       
+
+                        //Forward the message to the correct endpoint
+                        Proto.MessageHeader header = null;
+                        if (envelope.MessageHeader != null)
+                        {
+                            header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+                        }
+
+                        var forwardingEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                        if (target.Address.Equals(ProcessRegistry.Instance.Address))
+                        {
+                            Logger.LogDebug(
+                                $"Sending message {message} to local target {target} from {envelope.Sender}");
+                            RootContext.Empty.Send(target, forwardingEnvelope);
+                        }
+                        else
+                        {
+                            Logger.LogDebug($"Sending message to remote target {target}");
+                            //todo: We could have forwarded this batch without deserializing contents if we had access to SendEnvelopesAsync from EndPointWriter
+                            //todo: If we use a naming prefix for proxies, we could tell if we are sending to another client proxy and avoid deserialization there too
+                            Remote.Remote.SendMessage(target, forwardingEnvelope, Serialization.DefaultSerializerId);
+                        }
+
+
                     }
-                   
-                    var forwardingEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                    if (target.Address.Equals(ProcessRegistry.Instance.Address))
-                    {
-                        Logger.LogDebug($"Sending message {message} to local target {target} from {envelope.Sender}");
-                        RootContext.Empty.Send(target, forwardingEnvelope);
-                    }
-                    else
-                    {
-                        Logger.LogDebug($"Sending message to remote target {target}");
-                        //todo: We could have forwarded this batch without deserializing contents if we had access to SendEnvelopesAsync from EndPointWriter
-                        //todo: If we use a naming prefix for proxies, we could tell if we are sending to another client proxy and avoid deserialization there too
-                        Remote.Remote.SendMessage(target, forwardingEnvelope, Serialization.DefaultSerializerId);
-                    }
-                   
-                   
-                   
-                    
                 }
 
-                return Task.CompletedTask;
+                Logger.LogDebug("Finished Request Stream - stopping connection manager");
+                clientEndpointWriter.Stop();
+                
+            }
+                
+            catch (Exception ex)
+            {
+                Logger.LogCritical(ex, "Exception on Client Host");
+            }
 
-            });
+            
+
+              
         }
 
         private PID SpawnClientHostAddressResponder()
         {
             return RootContext.Empty.Spawn(Props.FromFunc(context =>
             {
-                if (context.Message is ClientHostAddressRequest)
-                {
-                    context.Respond(new ClientHostAddressResponse(){Address = ProcessRegistry.Instance.Address});
-                }
+//                if (context.Message is ClientHostAddressRequest)
+//                {
+//                    context.Respond(new ClientHostAddressResponse(){Address = ProcessRegistry.Instance.Address});
+//                }
 
                 return Actor.Done;
             }));
         }
 
 
-        private static PID SpawnProxyActivator(IServerStreamWriter<MessageBatch> responseStream)
+        private static PID SpawnClientEndpointWriter(IServerStreamWriter<MessageBatch> responseStream)
         {
             
             //TOD, make one of these supervise the other so we can shutdown the whole tree if the connection dies
             var endpointWriter = RootContext.Empty.Spawn(Props.FromProducer(() => new ClientHostEndpointWriter(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy));
             
-            
-            var props = Props.FromProducer(() => new ProxyActivator(endpointWriter)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            return RootContext.Empty.Spawn(props);
+            return endpointWriter;
+
+//            var props = Props.FromProducer(() => new ProxyActivator(endpointWriter)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+//            return RootContext.Empty.Spawn(props);
         }
 
         

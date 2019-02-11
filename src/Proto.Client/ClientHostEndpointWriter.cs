@@ -1,6 +1,8 @@
 using System;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Client
@@ -8,19 +10,42 @@ namespace Proto.Client
     public class ClientHostEndpointWriter :IActor
     {
         private readonly IServerStreamWriter<MessageBatch> _responseStream;
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(ClientHostEndpointWriter).FullName);
 
         public ClientHostEndpointWriter(IServerStreamWriter<MessageBatch> responseStream)
         {
             _responseStream = responseStream;
         }
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
-           
-            if (!(context.Message is RemoteDeliver rd)) return Actor.Done;
+            Logger.LogDebug($"ClientEndpointwriter received {context.Message}");
+            
+            switch (context.Message)
+            {
+                case Started started:
+                    
+                    //Send a connection started message to be delivered over this response stream
+                    
+                    
+                    context.Send(context.Self, new  RemoteDeliver(null, new ClientConnectionStarted(), context.Self, context.Self, Serialization.DefaultSerializerId));
+                    break;
+                
+                
+                case RemoteDeliver rd:
+                    
+                    Logger.LogDebug($"Sending RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
 
-            var batch = rd.getMessageBatch();
+                    var batch = rd.getMessageBatch();
            
-            return _responseStream.WriteAsync(batch);
+                    await _responseStream.WriteAsync(batch);
+            
+                    Logger.LogDebug($"Sent RemoteDeliver message {rd.Message} to {rd.Target.Id}");
+                    
+                    break;
+            }
+
+            
+           
 
         }
     }

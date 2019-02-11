@@ -12,7 +12,7 @@ namespace Proto.Remote.Tests.Node
         static void Main(string[] args)
         {
             var context = new RootContext();
-            Log.SetLoggerFactory(new LoggerFactory().AddConsole());
+            Log.SetLoggerFactory(new LoggerFactory().AddConsole(LogLevel.Debug));
             var app = new CommandLineApplication();
             var hostOption = app.Option("-h|--host", "host", CommandOptionType.SingleValue);
             var portArgument = app.Option("-p|--port", "port", CommandOptionType.SingleValue);

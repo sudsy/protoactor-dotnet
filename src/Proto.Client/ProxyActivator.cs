@@ -17,7 +17,7 @@ namespace Proto.Client
         }
         public Task ReceiveAsync(IContext context)
         {
-            Logger.LogDebug($"Proxy Activator Received Message {context.Message}");
+            Logger.LogDebug($"Proxy Activator Received Message {context.Message} from {context.Sender}");
            
             if (context.Message is ProxyPidRequest request)
             {
@@ -27,7 +27,7 @@ namespace Proto.Client
                 var clientProxyActorPid = RootContext.Empty.Spawn(props);
                 //Send a return message with the proxy id contained within
            
-
+                Logger.LogDebug($"Spawned proxy {clientProxyActorPid} for {context.Sender}");
                 var proxyResponse = new ProxyPidResponse()
                 {
                     ProxyPID = clientProxyActorPid
@@ -35,6 +35,7 @@ namespace Proto.Client
                 
                 var env = new RemoteDeliver(null, proxyResponse, context.Sender, context.Self, Serialization.DefaultSerializerId);
                 context.Send(_endpointWriter, env);
+                Logger.LogDebug($"Sent proxy Response {proxyResponse} to {context.Sender}");
             }
 
             return Actor.Done;
