@@ -38,7 +38,7 @@ namespace Proto.Client
             
             Logger.LogDebug("Connecting to client host");
             
-            ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientProxyProcess(pid));
+            ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess(pid));
             
             _channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
 
@@ -79,7 +79,7 @@ namespace Proto.Client
                         if (message is ClientConnectionStarted)
                         {
                             _clientHostAddress = envelope.Sender.Address;
-                            ProcessRegistry.Instance.Address = envelope.Sender.Address + "#" + envelope.Sender.Id;
+                            ProcessRegistry.Instance.Address = "client://" + envelope.Sender.Address + "/" + envelope.Sender.Id;
                             tcs.TrySetResult(true);
                             continue;
                         }
@@ -108,33 +108,7 @@ namespace Proto.Client
             await _channel.ShutdownAsync();
         }
 
-        public static async Task<PID> GetProxyPID(PID localPID)
-        {
-            //This needs a cache
-            var localPidString = localPID.ToString();
-
-            _remoteProxyTable.TryGetValue(localPidString, out var remoteProxyPid);
-            
-            if (remoteProxyPid != null)
-            {
-                return remoteProxyPid;
-            }
-            
-            var activator = new PID($"{_hostname}:{_port}", "proxy_activator");
-            
-            var proxyResponseMessage = await RootContext.Empty.RequestAsync<ProxyPidResponse>(activator, new ProxyPidRequest()
-            {
-                ClientPID = localPID
-            });
-            
-            
-            remoteProxyPid =  proxyResponseMessage.ProxyPID;
-            
-            _remoteProxyTable.TryAdd(localPidString, remoteProxyPid);
-
-            return remoteProxyPid;
-        }
-
+       
   
  
 
@@ -143,14 +117,8 @@ namespace Proto.Client
            
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
 
-            var remoteProxyID = sender;
             
-            if (!(message is ProxyPidRequest) && sender != null)
-            {
-                remoteProxyID = GetProxyPID(sender).Result;
-            }
-            
-            var env = new RemoteDeliver(header, message, target, remoteProxyID, serializerId);
+            var env = new RemoteDeliver(header, message, target, sender, serializerId);
             
             RootContext.Empty.Send(_endpointWriter, env);
 

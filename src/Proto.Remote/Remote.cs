@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
@@ -53,7 +54,7 @@ namespace Proto.Remote
         {
             RemoteConfig = config;
 
-            ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteProcess(pid));
+            ProcessRegistry.Instance.RegisterHostResolver(pid => isRemoteAddress(pid.Address) ? new RemoteProcess(pid) : null);
 
             EndpointManager.Start();
             _endpointReader = new EndpointReader();
@@ -81,6 +82,8 @@ namespace Proto.Remote
 
             Logger.LogDebug($"Starting Proto.Actor server on {boundAddr} ({addr})");
         }
+
+      
 
         public static void Shutdown(bool gracefull = true)
         {
@@ -147,6 +150,14 @@ namespace Proto.Remote
 
             var env = new RemoteDeliver(header, message, pid, sender, serializerId);
             EndpointManager.RemoteDeliver(env);
+        }
+        
+        private static bool isRemoteAddress(string remoteAddress)
+        {
+            IPAddress parsedAddress;
+            int parsedPort;
+            var parts = remoteAddress.Split(':');
+            return IPAddress.TryParse(parts[0], out parsedAddress) && int.TryParse(parts[1], out parsedPort);
         }
     }
 }

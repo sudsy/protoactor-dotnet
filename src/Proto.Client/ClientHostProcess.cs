@@ -2,12 +2,12 @@ using Proto.Remote;
 
 namespace Proto.Client
 {
-    public class ClientProxyProcess : Process
+    public class ClientHostProcess : Process
     {
         private readonly PID _pid;
         
 
-        public ClientProxyProcess( PID pid)
+        public ClientHostProcess( PID pid)
         {
             _pid = pid;
         }

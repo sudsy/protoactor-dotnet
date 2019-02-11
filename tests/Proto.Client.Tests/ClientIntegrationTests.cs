@@ -103,13 +103,7 @@ namespace Proto.Client.Tests
             await tcs.Task;
         }
 
-        [Fact, DisplayTestMethodName]
-        public async void CanGetProxyActorID()
-        {
-            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
-            var localPID = RootContext.Empty.Spawn((Props.FromFunc(ctx => Actor.Done)));
-            var proxyPID = await Client.GetProxyPID(localPID);
-        }
+      
         
         
         [Fact, DisplayTestMethodName]
