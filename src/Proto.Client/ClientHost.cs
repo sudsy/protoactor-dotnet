@@ -27,6 +27,13 @@ namespace Proto.Client
             Logger.LogDebug($"Starting Client Host");
             var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? port}";
 //            ProcessRegistry.Instance.Address = addr;
+            
+            ProcessRegistry.Instance.RegisterHostResolver(pid =>
+            {
+                Logger.LogDebug($"Testing if {pid} is a client");
+                return isClientAddress(pid.Address) ? new ClientProcess(pid) : null;
+            });
+            
             var clientEndpointManager = new ClientEndpointManager(addr);
             config.AdditionalServices = new List<ServerServiceDefinition>
             {
@@ -40,7 +47,10 @@ namespace Proto.Client
         }
         
         
-        
+        private static bool isClientAddress(string argAddress)
+        {
+            return argAddress.StartsWith("client:");
+        }
         
         
     }

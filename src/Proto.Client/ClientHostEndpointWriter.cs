@@ -18,7 +18,7 @@ namespace Proto.Client
         }
         public async Task ReceiveAsync(IContext context)
         {
-            Logger.LogDebug($"ClientEndpointwriter received {context.Message}");
+            Logger.LogDebug($"ClientHostEndpointwriter received {context.Message}");
             
             switch (context.Message)
             {
@@ -29,8 +29,11 @@ namespace Proto.Client
                     
                     context.Send(context.Self, new  RemoteDeliver(null, new ClientConnectionStarted(), context.Self, context.Self, Serialization.DefaultSerializerId));
                     break;
-                
-                
+
+                case ClientMessageBatch cmb:
+                    await _responseStream.WriteAsync(cmb.Batch);
+                    break;
+
                 case RemoteDeliver rd:
                     
                     Logger.LogDebug($"Sending RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");

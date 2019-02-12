@@ -30,11 +30,7 @@ namespace Proto.Client
             Logger.LogDebug($"Spawning Client EndpointWriter");
             var clientEndpointWriter = SpawnClientEndpointWriter(responseStream);
             
-            ProcessRegistry.Instance.RegisterHostResolver(pid =>
-            {
-                Logger.LogDebug($"Testing if {pid} is a client");
-                return isClientAddress(pid.Address) ? new ClientProcess(pid) : null;
-            });
+           
             
             try
             {
@@ -103,10 +99,7 @@ namespace Proto.Client
               
         }
 
-        private bool isClientAddress(string argAddress)
-        {
-            return argAddress.StartsWith("client:");
-        }
+      
 
         private PID SpawnClientHostAddressResponder()
         {

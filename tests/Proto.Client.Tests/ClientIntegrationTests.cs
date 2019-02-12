@@ -147,7 +147,7 @@ namespace Proto.Client.Tests
             
             await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
             var address = ProcessRegistry.Instance.Address;
-            Assert.Contains("127.0.0.1:12000#", address);
+            Assert.Contains("127.0.0.1:12000/", address);
 
             var endpointManagerId = address.Split("#")[1];
             var endpointPID = new PID(address, endpointManagerId);

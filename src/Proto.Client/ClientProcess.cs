@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Client
@@ -7,6 +8,7 @@ namespace Proto.Client
     {
         private PID _endpointWriterPID;
         private PID _clientTargetPID;
+        private static readonly ILogger Logger = Log.CreateLogger<ClientProcess>();
 
         public ClientProcess(PID pid)
         {
@@ -22,12 +24,28 @@ namespace Proto.Client
         
         private void Send(object envelope)
         {
-           
+            
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
             
-            var env = new RemoteDeliver(header, message, _clientTargetPID, sender, Serialization.DefaultSerializerId);
+            Logger.LogDebug($"Sending Client Message {message} to {_clientTargetPID}");
             
-            RootContext.Empty.Send(_endpointWriterPID, env);
+            var env = new RemoteDeliver(header, message, _clientTargetPID, sender, Serialization.DefaultSerializerId);
+
+            if (_endpointWriterPID.Address == ProcessRegistry.Instance.Address)
+            {
+                RootContext.Empty.Send(_endpointWriterPID, env);
+            }
+            else
+            {
+                var messageBatch = new ClientMessageBatch
+                {
+                    Address = _endpointWriterPID.Address,
+                    Batch = env.getMessageBatch()
+                };
+                RootContext.Empty.Send(_endpointWriterPID, messageBatch);
+            }
+            
+            
             
         }
     }
