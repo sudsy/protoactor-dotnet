@@ -22,7 +22,7 @@ namespace Proto.Client.Tests
         {
             Serialization.RegisterFileDescriptor(Proto.Remote.Tests.Messages.ProtosReflection.Descriptor);
             ProvisionNode("127.0.0.1", 12000, true);
-            ProvisionNode("127.0.0.1", 12001);
+            ProvisionNode("127.0.0.1", 12001, true);
             
             
            
