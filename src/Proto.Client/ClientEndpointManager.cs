@@ -65,19 +65,11 @@ namespace Proto.Client
                         }
 
                         var forwardingEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                        if (target.Address.Equals(ProcessRegistry.Instance.Address))
-                        {
-                            Logger.LogDebug(
-                                $"Sending message {message} to local target {target} from {envelope.Sender}");
-                            RootContext.Empty.Send(target, forwardingEnvelope);
-                        }
-                        else
-                        {
-                            Logger.LogDebug($"Sending message to remote target {target}");
-                            //todo: We could have forwarded this batch without deserializing contents if we had access to SendEnvelopesAsync from EndPointWriter
-                            //todo: If we use a naming prefix for proxies, we could tell if we are sending to another client proxy and avoid deserialization there too
-                            Remote.Remote.SendMessage(target, forwardingEnvelope, Serialization.DefaultSerializerId);
-                        }
+
+                        Logger.LogDebug($"Sending message {message} to target {target} from {envelope.Sender}");
+                        
+                        RootContext.Empty.Send(target, forwardingEnvelope);
+
 
 
                     }
