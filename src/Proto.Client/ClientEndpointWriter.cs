@@ -29,7 +29,7 @@ namespace Proto.Client
                 Address = rd.Target.Address,
                 Batch = batch
             };
-
+            
             return _requestStream.WriteAsync(clientBatch);
 
 

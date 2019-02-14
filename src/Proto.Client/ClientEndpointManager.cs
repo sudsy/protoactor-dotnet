@@ -77,10 +77,11 @@ namespace Proto.Client
                 }
 
                 Logger.LogDebug("Finished Request Stream - stopping connection manager");
-                clientEndpointWriter.Stop();
                 
-            }
+                clientEndpointWriter.Poison();
+                Logger.LogDebug("Client Endpoint manager shut down");
                 
+            }   
             catch (Exception ex)
             {
                 Logger.LogCritical(ex, "Exception on Client Host");

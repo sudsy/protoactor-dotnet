@@ -30,6 +30,8 @@ namespace Proto.Client.Tests
         {
            
             _remoteManager = remoteManager;
+            
+         
            
         }
 
@@ -66,6 +68,7 @@ namespace Proto.Client.Tests
             
             Client.SendMessage(clientHostActor, envelope, 1);
             await tcs.Task;
+            
         }
 
         [Fact, DisplayTestMethodName]
@@ -101,6 +104,7 @@ namespace Proto.Client.Tests
             
            
             await tcs.Task;
+            
         }
 
       
@@ -115,6 +119,7 @@ namespace Proto.Client.Tests
             var remoteActor = remoteActorResp.Pid;
             var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
             Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
+          
         }
         
         [Fact, DisplayTestMethodName]
@@ -123,6 +128,7 @@ namespace Proto.Client.Tests
             await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
             var address = await Client.GetClientHostAddress();
             Assert.Equal("127.0.0.1:12000", address);
+         
         }
         
         [Fact, DisplayTestMethodName]
@@ -134,6 +140,7 @@ namespace Proto.Client.Tests
             var remoteActor = remoteActorResp.Pid;
             var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
             Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
+      
         }
         
         
