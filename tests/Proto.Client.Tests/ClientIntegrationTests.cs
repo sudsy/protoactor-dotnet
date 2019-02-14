@@ -136,6 +136,25 @@ namespace Proto.Client.Tests
             Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
         }
         
+        
+        [Fact, DisplayTestMethodName]
+        public async void CanConnectMultipleTimes()
+        {
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
+            var remoteActorName = Guid.NewGuid().ToString();
+            var remoteActorResp = await Client.SpawnOnClientHostAsync( remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActor = remoteActorResp.Pid;
+            var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
+            Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
+            //Connect again here should be idempotent
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
+            await Client.Disconnect();
+            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
+            
+            var pong2 = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
+            Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong2.Message);
+            await Client.Disconnect();
+        }
         //TODO Write a test to make sure we can watch actors through the client connection
 
 

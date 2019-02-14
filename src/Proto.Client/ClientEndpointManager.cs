@@ -28,6 +28,7 @@ namespace Proto.Client
         {
             
             Logger.LogDebug($"Spawning Client EndpointWriter");
+            
             var clientEndpointWriter = SpawnClientEndpointWriter(responseStream);
             
            
@@ -111,7 +112,7 @@ namespace Proto.Client
         {
             
             //TOD, make one of these supervise the other so we can shutdown the whole tree if the connection dies
-            var endpointWriter = RootContext.Empty.Spawn(Props.FromProducer(() => new ClientHostEndpointWriter(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy));
+            var endpointWriter = RootContext.Empty.SpawnNamed(Props.FromProducer(() => new ClientHostEndpointWriter(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy), Guid.NewGuid().ToString());
             
             return endpointWriter;
 

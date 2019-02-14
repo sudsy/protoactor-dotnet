@@ -21,6 +21,7 @@ namespace Proto.Client
         private static string _clientHostAddress;
         private static Channel _channel;
         private static AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
+        private static CancellationTokenSource _cancelListener = new CancellationTokenSource();
 
 
         static Client()
@@ -30,6 +31,15 @@ namespace Proto.Client
         
         public static async Task Connect(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
+            if (_channel?.State == ChannelState.Ready)
+            {
+                //We are already connected
+                Console.WriteLine("Already Connected");
+                return;
+            }
+            
+            _cancelListener = new CancellationTokenSource();
+            
             _hostname = hostname;
             _port = port;
             
@@ -64,36 +74,53 @@ namespace Proto.Client
             //Setup listener for incoming stream
             var streamListenerTask = Task.Factory.StartNew(async () =>
             {
-                var responseStream = _clientStreams.ResponseStream;
-                while (await responseStream.MoveNext(CancellationToken.None)
-                ) //Need to work out how this might be cancelled
+                try
                 {
-                    Logger.LogDebug("Received Message Batch");
-                    var messageBatch = responseStream.Current;
-                    foreach (var envelope in messageBatch.Envelopes)
+                    var responseStream = _clientStreams.ResponseStream;
+                    while (await responseStream.MoveNext(_cancelListener.Token)
+                    ) //Need to work out how this might be cancelled
                     {
-                        var target = new PID(ProcessRegistry.Instance.Address,messageBatch.TargetNames[envelope.Target]);
-                        
-                        var message = Serialization.Deserialize(messageBatch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
-
-                        if (message is ClientConnectionStarted)
+                        Logger.LogDebug("Received Message Batch");
+                        var messageBatch = responseStream.Current;
+                        foreach (var envelope in messageBatch.Envelopes)
                         {
-                            _clientHostAddress = envelope.Sender.Address;
-                            ProcessRegistry.Instance.Address = "client://" + envelope.Sender.Address + "/" + envelope.Sender.Id;
-                            tcs.TrySetResult(true);
-                            continue;
-                        }
+                            var target = new PID(ProcessRegistry.Instance.Address,messageBatch.TargetNames[envelope.Target]);
+                        
+                            var message = Serialization.Deserialize(messageBatch.TypeNames[envelope.TypeId], envelope.MessageData, envelope.SerializerId);
+
+                            if (message is ClientConnectionStarted)
+                            {
+                                _clientHostAddress = envelope.Sender.Address;
+                                ProcessRegistry.Instance.Address = "client://" + envelope.Sender.Address + "/" + envelope.Sender.Id;
+                                tcs.TrySetResult(true);
+                                continue;
+                            }
                           
                         
-                        Logger.LogDebug($"Opened Envelope from {envelope.Sender} for {target} containing message {message}");
-                        //todo: Need to convert the headers here
-                        var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, null);
+                            Logger.LogDebug($"Opened Envelope from {envelope.Sender} for {target} containing message {message}");
+                            //todo: Need to convert the headers here
+                            var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, null);
                         
-                        RootContext.Empty.Send(target, localEnvelope);
-                    }
+                            RootContext.Empty.Send(target, localEnvelope);
+                        }
                    
+                    }
                 }
-            });
+                catch (RpcException ex)
+                {
+                    if (ex.StatusCode == StatusCode.Cancelled && _cancelListener.IsCancellationRequested)
+                    {
+                        //Do nothing, this is an expected exception when we cancel the connection
+                        return;
+                    }
+                    
+                    Logger.LogCritical(ex, "Exception Thrown from inside stream listener task");
+                }
+              
+            },_cancelListener.Token).ContinueWith(antecedentTask =>
+            {
+                Logger.LogCritical(antecedentTask.Exception, "Exception Thrown from outside stream listener task");
+            }, TaskContinuationOptions.OnlyOnFaulted);
 
 
 
@@ -104,6 +131,9 @@ namespace Proto.Client
 
         public static async Task Disconnect()
         {
+            _cancelListener.Cancel();
+            _endpointWriter.Stop();
+            _clientStreams.ResponseStream.Dispose();
             _clientStreams.Dispose();
             await _channel.ShutdownAsync();
         }

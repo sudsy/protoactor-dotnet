@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0</TargetFrameworks>
-        <Version>0.2.14-proto-client</Version>
+        <Version>0.2.19-proto-client</Version>
         <RootNamespace>Proto</RootNamespace>
     </PropertyGroup>
 
