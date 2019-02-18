@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
@@ -28,8 +29,11 @@ namespace Proto.Client
         {
             
             Logger.LogDebug($"Spawning Client EndpointWriter");
+
+            var clientIdHeader = context.RequestHeaders.FirstOrDefault(entry => entry.Key == "clientId");
+            var clientId = clientIdHeader != null ? clientIdHeader.Value : Guid.NewGuid().ToString();
             
-            var clientEndpointWriter = SpawnClientEndpointWriter(responseStream);
+            var clientEndpointWriter = SpawnClientEndpointWriter(responseStream, clientId);
             
            
             
@@ -109,11 +113,11 @@ namespace Proto.Client
         }
 
 
-        private static PID SpawnClientEndpointWriter(IServerStreamWriter<MessageBatch> responseStream)
+        private static PID SpawnClientEndpointWriter(IServerStreamWriter<MessageBatch> responseStream, string clientId)
         {
             
             //TOD, make one of these supervise the other so we can shutdown the whole tree if the connection dies
-            var endpointWriter = RootContext.Empty.SpawnNamed(Props.FromProducer(() => new ClientHostEndpointWriter(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy), Guid.NewGuid().ToString());
+            var endpointWriter = RootContext.Empty.SpawnNamed(Props.FromProducer(() => new ClientHostEndpointWriter(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy), clientId);
             
             return endpointWriter;
 

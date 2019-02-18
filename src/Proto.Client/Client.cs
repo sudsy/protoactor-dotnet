@@ -15,20 +15,20 @@ namespace Proto.Client
     public class Client : IDisposable
     {
         private static readonly ILogger Logger = Log.CreateLogger<Client>();
-        private static readonly List<PID> _activeEndpoints = new List<PID>();
+        private static readonly List<Client> _activeClients = new List<Client>();
+        private static readonly List<string> _allAddresses = new List<string>();
+        private static readonly string _clientId = Guid.NewGuid().ToString();
+       
         private static Channel _channel;
         private static ClientRemoting.ClientRemotingClient _client;
+        private static AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
+        private static PID _endpointWriter;
+        private static string _clientHostAddress;
+        private static CancellationTokenSource _cancelListeningToken;
         
-
-        private readonly AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
-        private readonly PID _endpointWriter;
+        private readonly TaskCompletionSource<string> _receivedClientAddressTCS;
         
-        private string _clientHostAddress;
-        private TaskCompletionSource<string> _receivedClientAddressTCS;
-        private bool _disposed;
-        private CancellationTokenSource _cancelListeningToken;
-
-
+        
         static Client()
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
@@ -39,38 +39,56 @@ namespace Proto.Client
         {
             _cancelListeningToken = new CancellationTokenSource();
             var connectionCancellationToken = new CancellationTokenSource(connectionTimeoutMs);
-            _receivedClientAddressTCS = new TaskCompletionSource<string>();
-            connectionCancellationToken.Token.Register(() =>
-            {
-                _receivedClientAddressTCS.TrySetCanceled();
-            });
             
             if (_channel == null || _channel.State != ChannelState.Ready)
             {
+                //THis hangs around even when there are no client rpcs
                 _channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
                 _client = new ClientRemoting.ClientRemotingClient(_channel);
+               
             }
-
-           
-            _clientStreams = _client.ConnectClient(null, null, connectionCancellationToken.Token);
-
-            _endpointWriter =
-                RootContext.Empty.Spawn(Props.FromProducer(() =>
-                    new ClientEndpointWriter(_clientStreams.RequestStream)));
             
-            ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess( pid));
+            if (_activeClients.Count <= 0)
+            {
+                //This gets disposed when the last client is finished
+                var connectionHeaders = new Metadata() {{"clientId", _clientId}};
+                
+                _clientStreams = _client.ConnectClient(connectionHeaders, null, connectionCancellationToken.Token);
+               
+                _receivedClientAddressTCS = new TaskCompletionSource<string>();
+                connectionCancellationToken.Token.Register(() =>
+                {
+                    _receivedClientAddressTCS.TrySetCanceled();
+                });
+                
+                
+               
 
-
-            var listenerTask = Task.Factory.StartNew(IncomingStreamListener);
+                _endpointWriter =
+                    RootContext.Empty.Spawn(Props.FromProducer(() =>
+                        new ClientEndpointWriter(_clientStreams.RequestStream)));
             
-            //We need to wait until the clienthostaddress has been set
-            //Use a cancellation token to time out on this if it doesn't return in time
-            _receivedClientAddressTCS.Task.Wait();
+                ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess( pid));
+
+
+                var listenerTask = Task.Factory.StartNew(IncomingStreamListener);
+            
+                //We need to wait until the clienthostaddress has been set
+                //Use a cancellation token to time out on this if it doesn't return in time
+                _receivedClientAddressTCS.Task.Wait();
+            
+               
+               
+            }
             
             // No need to wait for cancellation anymore 
             connectionCancellationToken.Dispose();
-            
-            _activeEndpoints.Add(_endpointWriter);
+
+            //Count instances accessing this rpc so we can clean up at the end
+            _activeClients.Add(this);
+           
+
+          
         }
 
         private async Task IncomingStreamListener()
@@ -94,6 +112,7 @@ namespace Proto.Client
                         if (message is ClientConnectionStarted)
                         {
                             _clientHostAddress = envelope.Sender.Address;
+                            _allAddresses.Add(_clientHostAddress);
                             ProcessRegistry.Instance.Address =
                                 "client://" + envelope.Sender.Address + "/" + envelope.Sender.Id;
                             _receivedClientAddressTCS.SetResult(_clientHostAddress);
@@ -113,10 +132,16 @@ namespace Proto.Client
             }
             catch (Exception ex)
             {
-                if (ex is InvalidOperationException || ex is RpcException)
+                if (ex is RpcException rpcEx)
                 {
-                    
-                    if (_disposed)
+                    if (rpcEx.Status.Equals(Status.DefaultCancelled) || _activeClients.Count <= 0)
+                    {
+                        return;
+                    }
+                }
+                if (ex is InvalidOperationException)
+                {
+                    if (_activeClients.Count <= 0)
                     {
                         //Do nothing, this is an expected exception when we cancel the connection
                         
@@ -167,32 +192,41 @@ namespace Proto.Client
      
         public void Dispose()
         {
-            _cancelListeningToken.Cancel();
-            _activeEndpoints.Remove(_endpointWriter);
-            _disposed = true;
-            _endpointWriter.Stop();
-            _clientStreams?.Dispose();
+
+            //Keep track of clients accessing so we can clean up at the end
+            _activeClients.Remove(this);
+            
+            if (_activeClients.Count <= 0)
+            {
+                _cancelListeningToken.Cancel();
+                _endpointWriter.Stop();
+                _clientStreams?.Dispose();
+            }
+            
+            
         }
         
         
         public static void SendMessage(PID target, object envelope, int serializerId)
         {
+           
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
-
-
-            var env = new RemoteDeliver(header, message, target, sender, serializerId);
             
-            if (target.Address != ProcessRegistry.Instance.Address && _activeEndpoints.Count <= 0)
+            if (_activeClients.Count <= 0)
             {
-                Logger.LogDebug($"{target.Address} not equal to {ProcessRegistry.Instance.Address} so and no active endpoints");
-                Logger.LogWarning($"Message {message} for {target} could not be sent or delivered to DeadLetter - no active endpoints available");
-                return;
+               
+                    
+                    Logger.LogWarning($"Message {message} for {target} could not be sent locally to {ProcessRegistry.Instance.Address} or delivered remotely - no active endpoints available should send to DeadLetter");
+                    return;
+               
+               
             }
             
-           
+            
+            var env = new RemoteDeliver(header, message, target, sender, serializerId);
             
 
-            RootContext.Empty.Send(_activeEndpoints.First(), env);
+            RootContext.Empty.Send(_endpointWriter, env);
 
         }
     

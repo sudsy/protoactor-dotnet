@@ -174,7 +174,7 @@ namespace Proto.Client.Tests
                 Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
                 
             }
-//            await Client.Disconnect();
+
 
             using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
             {
@@ -184,54 +184,42 @@ namespace Proto.Client.Tests
                 Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong2.Message);
             }
         }
+        
+        [Fact, DisplayTestMethodName]
+        public async void CanOverlapConnections()
+        {
+
+            var client1 = new Client("127.0.0.1", 12000, new RemoteConfig());
+            
+            var remoteActorName = "EchoActor_" + Guid.NewGuid().ToString();
+            var remoteActorResp =
+                    await client1.SpawnOnClientHostAsync(remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActor = remoteActorResp.Pid;
+            var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
+                    TimeSpan.FromMilliseconds(5000));
+            
+            Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
+            
+            var client2 = new Client("127.0.0.1", 12000, new RemoteConfig());   
+            
+
+
+            var remoteActor2Name = "EchoActor_" + Guid.NewGuid().ToString();
+            var remoteActor2Resp =
+                await client2.SpawnOnClientHostAsync(remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActor2 = remoteActorResp.Pid;
+            var pong2 = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
+                TimeSpan.FromMilliseconds(5000));
+            Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong2.Message);
+            
+            client1.Dispose();
+            client2.Dispose();
+            
+        }
         //TODO Write a test to make sure we can watch actors through the client connection
 
 
-//        [Fact, DisplayTestMethodName]
-//        public async void CanCleanUpConnectionManagerOnDisconnect()
-//        {
-//            var watchcs = new TaskCompletionSource<bool>();
-//            var tcs = new TaskCompletionSource<bool>();
-//            
-//            await Client.Connect("127.0.0.1", 12000, new RemoteConfig());
-//            var address = ProcessRegistry.Instance.Address;
-//            var clientAddress = new Uri(address);
-//            Assert.Equal("127.0.0.1:12000", clientAddress.Authority);
-//            Assert.Equal("client", clientAddress.Scheme);
-//
-//            var endpointManagerId = clientAddress.AbsolutePath.Substring(1);
-//            var endpointPid = new PID(clientAddress.Authority, endpointManagerId);
-//
-//            Remote.Remote.Start("127.0.0.1", 12222);
-//            RootContext.Empty.Spawn(Props.FromFunc(context =>
-//            {
-//                switch (context.Message)
-//                {
-//                    case Started _:
-//                        context.Watch(endpointPid);
-//                        watchcs.TrySetResult(true);
-//                        break;
-//                    case Terminated terminated:
-//                        if (terminated.Who.Id == endpointManagerId)
-//                        {
-//                            tcs.SetResult(true);
-//                        }
-//
-//                        break;
-//                }
-//
-//                return Actor.Done;
-//
-//            }));
-//
-//            await Task.Delay(TimeSpan.FromSeconds(1));
-////            endpointPID.Stop();
-//            await Client.Disconnect();
-//
-//            await tcs.Task;
-//
-//
-//        }
+
 
     }
 }
