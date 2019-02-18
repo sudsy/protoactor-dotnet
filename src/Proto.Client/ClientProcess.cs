@@ -16,6 +16,8 @@ namespace Proto.Client
             
             var clientAddress = new Uri(pid.Address);
             _endpointWriterPID = new PID(clientAddress.Host + ":" + clientAddress.Port, clientAddress.AbsolutePath.Substring(1));
+            
+            
         }
 
         protected override void SendUserMessage(PID _, object message) => Send(message);
