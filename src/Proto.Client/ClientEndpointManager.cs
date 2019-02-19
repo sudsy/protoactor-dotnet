@@ -30,12 +30,19 @@ namespace Proto.Client
             
             Logger.LogDebug($"Spawning Client EndpointWriter");
 
-            var clientIdHeader = context.RequestHeaders.FirstOrDefault(entry => entry.Key == "clientId");
-            var clientId = clientIdHeader != null ? clientIdHeader.Value : Guid.NewGuid().ToString();
+            Logger.LogDebug($"Request headers count is {context.RequestHeaders.Count} - {context.RequestHeaders.Select(entry => entry.Key + ":" + entry.Value).Aggregate((acc, value) => acc + "," + value)}");
+            var clientIdHeader = context.RequestHeaders.FirstOrDefault(entry => entry.Key == "clientid");
+            var clientId = clientIdHeader?.Value;
+            if (clientId == null)
+            {
+                clientId = Guid.NewGuid().ToString();
+                Logger.LogWarning($"clientId header is not set - generating random client id {clientId}");
+                
+            }
+
+          
+            var clientHostEndpointWriter = await SpawnClientHostEndpointWriter(responseStream, clientId);
             
-            var clientEndpointWriter = SpawnClientEndpointWriter(responseStream, clientId);
-            
-           
             
             try
             {
@@ -82,7 +89,7 @@ namespace Proto.Client
 
                 Logger.LogDebug("Finished Request Stream - stopping connection manager");
                 
-                clientEndpointWriter.Poison();
+                await clientHostEndpointWriter.PoisonAsync();
                 Logger.LogDebug("Client Endpoint manager shut down");
                 
             }   
@@ -113,14 +120,34 @@ namespace Proto.Client
         }
 
 
-        private static PID SpawnClientEndpointWriter(IServerStreamWriter<MessageBatch> responseStream, string clientId)
+        private static async Task<PID> SpawnClientHostEndpointWriter(IServerStreamWriter<MessageBatch> responseStream, string clientId)
         {
-            
-            //TOD, make one of these supervise the other so we can shutdown the whole tree if the connection dies
-            var endpointWriter = RootContext.Empty.SpawnNamed(Props.FromProducer(() => new ClientHostEndpointWriter(responseStream)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy), clientId);
-            
-            return endpointWriter;
+            try
+            {
+                var endpointWriter = RootContext.Empty.SpawnNamed(
+                    Props.FromProducer(() => new ClientHostEndpointWriter(responseStream))
+                        .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy), clientId);
 
+                return endpointWriter;
+
+            }
+            catch (ProcessNameExistException)
+            {
+                Logger.LogDebug("Existing endpointwriter found - waiting for shutdown");
+                //Still hanging around from last connection
+                var endpointWriterPID = new PID {Address = ProcessRegistry.Instance.Address, Id = clientId};
+                endpointWriterPID.Stop();
+                await Task.Delay(TimeSpan.FromMilliseconds(100));
+                Logger.LogDebug("Paused for 100 msec to allow shutdown");
+                return await SpawnClientHostEndpointWriter(responseStream, clientId);
+            }
+            catch(Exception ex)
+            {
+                Logger.LogCritical(ex, "Exception while spawning endpoint writer");
+                throw ex;
+            }
+            
+            
 //            var props = Props.FromProducer(() => new ProxyActivator(endpointWriter)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
 //            return RootContext.Empty.Spawn(props);
         }

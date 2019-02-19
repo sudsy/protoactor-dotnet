@@ -16,22 +16,30 @@ namespace Proto.Client
             _requestStream = clientStreamsRequestStream;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
-            if (!(context.Message is RemoteDeliver rd)) return Actor.Done;
-
-            var batch = rd.getMessageBatch();
-            
-            Logger.LogDebug($"Sending RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
-                
-            var clientBatch = new ClientMessageBatch()
+            switch (context.Message)
             {
-                Address = rd.Target.Address,
-                Batch = batch
-            };
+                case Stopping _:
+                    Logger.LogDebug($"Sending end of stream signal to server");
+                    await _requestStream.CompleteAsync();
+                    break;
+                case RemoteDeliver rd:
+                    var batch = rd.getMessageBatch();
             
-            return _requestStream.WriteAsync(clientBatch);
-
+                    Logger.LogDebug($"Sending RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
+                
+                    var clientBatch = new ClientMessageBatch()
+                    {
+                        Address = rd.Target.Address,
+                        Batch = batch
+                    };
+            
+                    await _requestStream.WriteAsync(clientBatch);
+                    break;
+                    
+            }
+           
 
         }
 

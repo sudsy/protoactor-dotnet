@@ -163,6 +163,7 @@ namespace Proto.Client.Tests
         public async void CanConnectMultipleTimes()
         {
             PID remoteActor;
+            string firstAddress;
             using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
             {
                 var remoteActorName = "EchoActor_" + Guid.NewGuid().ToString();
@@ -172,16 +173,17 @@ namespace Proto.Client.Tests
                 var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
                     TimeSpan.FromMilliseconds(5000));
                 Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
-                
+                firstAddress = ProcessRegistry.Instance.Address;
             }
 
-
+            
             using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
             {
 
                 var pong2 = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
                     TimeSpan.FromMilliseconds(5000));
                 Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong2.Message);
+                Assert.Equal(firstAddress, ProcessRegistry.Instance.Address);
             }
         }
         
@@ -190,6 +192,7 @@ namespace Proto.Client.Tests
         {
 
             var client1 = new Client("127.0.0.1", 12000, new RemoteConfig());
+            var firstAddress = ProcessRegistry.Instance.Address;
             
             var remoteActorName = "EchoActor_" + Guid.NewGuid().ToString();
             var remoteActorResp =
@@ -211,6 +214,7 @@ namespace Proto.Client.Tests
             var pong2 = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
                 TimeSpan.FromMilliseconds(5000));
             Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong2.Message);
+            Assert.Equal(firstAddress, ProcessRegistry.Instance.Address);
             
             client1.Dispose();
             client2.Dispose();

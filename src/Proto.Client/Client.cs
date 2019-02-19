@@ -24,7 +24,7 @@ namespace Proto.Client
         private static AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
         private static PID _endpointWriter;
         private static string _clientHostAddress;
-        private static CancellationTokenSource _cancelListeningToken;
+        private static CancellationTokenSource _cancelListeningToken = new CancellationTokenSource();
         
         private readonly TaskCompletionSource<string> _receivedClientAddressTCS;
         
@@ -37,21 +37,20 @@ namespace Proto.Client
         
         public Client(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
-            _cancelListeningToken = new CancellationTokenSource();
-            var connectionCancellationToken = new CancellationTokenSource(connectionTimeoutMs);
-            
-            if (_channel == null || _channel.State != ChannelState.Ready)
-            {
-                //THis hangs around even when there are no client rpcs
-                _channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
-                _client = new ClientRemoting.ClientRemotingClient(_channel);
-               
-            }
             
             if (_activeClients.Count <= 0)
             {
+                if (_channel == null || _channel.State != ChannelState.Ready)
+                {
+                    //THis hangs around even when there are no client rpcs
+                    _channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
+                    _client = new ClientRemoting.ClientRemotingClient(_channel);
+               
+                }
+                
+                var connectionCancellationToken = new CancellationTokenSource(connectionTimeoutMs);
                 //This gets disposed when the last client is finished
-                var connectionHeaders = new Metadata() {{"clientId", _clientId}};
+                var connectionHeaders = new Metadata() {{"clientid", _clientId}};
                 
                 _clientStreams = _client.ConnectClient(connectionHeaders, null, connectionCancellationToken.Token);
                
@@ -76,13 +75,14 @@ namespace Proto.Client
                 //We need to wait until the clienthostaddress has been set
                 //Use a cancellation token to time out on this if it doesn't return in time
                 _receivedClientAddressTCS.Task.Wait();
-            
+                
+                // No need to wait for cancellation anymore 
+                connectionCancellationToken.Dispose();
                
                
             }
             
-            // No need to wait for cancellation anymore 
-            connectionCancellationToken.Dispose();
+          
 
             //Count instances accessing this rpc so we can clean up at the end
             _activeClients.Add(this);
@@ -132,6 +132,7 @@ namespace Proto.Client
             }
             catch (Exception ex)
             {
+                
                 if (ex is RpcException rpcEx)
                 {
                     if (rpcEx.Status.Equals(Status.DefaultCancelled) || _activeClients.Count <= 0)
@@ -149,7 +150,7 @@ namespace Proto.Client
                     }
                 }
 
-                Logger.LogCritical(ex, "Exception Thrown from inside stream listener task");
+                Logger.LogCritical(ex, $"Exception Thrown from inside stream listener task");
                 throw ex;
             }
 
@@ -198,9 +199,14 @@ namespace Proto.Client
             
             if (_activeClients.Count <= 0)
             {
-                _cancelListeningToken.Cancel();
-                _endpointWriter.Stop();
+                //avoid calling cancellation token prefer to shutdown gracefully by stopping endpoint writer
+                //                _cancelListeningToken.Cancel();
+                
+                _endpointWriter.PoisonAsync().Wait();
+                //Wait for the end of stream for the reader
+                
                 _clientStreams?.Dispose();
+                _cancelListeningToken = new CancellationTokenSource();
             }
             
             
