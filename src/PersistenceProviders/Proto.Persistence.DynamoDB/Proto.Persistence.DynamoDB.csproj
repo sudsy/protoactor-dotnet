@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <!-- <TargetFrameworks>netstandard1.5</TargetFrameworks> -->
-    <Version>0.2.34-proto-client</Version>
+    <Version>0.2.35-proto-client</Version>
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
     <Description>Ultra-fast distributed actors for .NET.</Description>

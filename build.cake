@@ -1,6 +1,6 @@
 #addin Cake.Git
 
-var packageVersion = "0.2.34";
+var packageVersion = "0.2.35";
 
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);

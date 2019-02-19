@@ -135,7 +135,7 @@ namespace Proto.Client
                 
                 if (ex is RpcException rpcEx)
                 {
-                    if (rpcEx.Status.Equals(Status.DefaultCancelled) || _activeClients.Count <= 0)
+                    if (rpcEx.StatusCode.Equals(StatusCode.Cancelled) || _activeClients.Count <= 0)
                     {
                         return;
                     }
@@ -218,16 +218,6 @@ namespace Proto.Client
            
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
             
-            if (_activeClients.Count <= 0)
-            {
-               
-                    
-                    Logger.LogWarning($"Message {message} for {target} could not be sent locally to {ProcessRegistry.Instance.Address} or delivered remotely - no active endpoints available should send to DeadLetter");
-                    return;
-               
-               
-            }
-            
             
             var env = new RemoteDeliver(header, message, target, sender, serializerId);
             
@@ -236,79 +226,6 @@ namespace Proto.Client
 
         }
     
-//        public static async Task Disconnect()
-//        {
-//            if (_channel == null)
-//            {
-//                return;
-//            }
-//            await _channel.ShutdownAsync();
-//        }            
-
-//    public static async Task Connect(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
-//    {
-//        /*if (_cancelListener != null && _cancelListener.IsCancellationRequested == false)
-//        {
-//            //We are already connected
-//            Logger.LogDebug("Already Connected");
-//            return;
-//        }*/
-//        if (_channel != null && _channel.State == ChannelState.Ready && _cancelListener != null)
-//        {
-//            if (!_cancelListener.IsCancellationRequested)
-//            {
-//                Logger.LogDebug("Already Connected");
-//                return;
-//            }
-//
-//        }
-//
-//
-//        _cancelListener = new CancellationTokenSource();
-//
-//        _hostname = hostname;
-//        _port = port;
-//
-//        var tcs = new TaskCompletionSource<bool>();
-//
-//
-//        Logger.LogDebug("Connecting to client host");
-//
-//        ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess(pid));
-//
-//
-//
-//
-//
-//
-//
-//        _clientStreams = client.ConnectClient();
-//
-//
-//
-//
-//
-//
-//        Logger.LogDebug("Connected to Client Host");
-//
-//        _endpointWriter =
-//            RootContext.Empty.Spawn(Props.FromProducer(() =>
-//                new ClientEndpointWriter(_clientStreams.RequestStream)));
-//
-//
-//
-//        //Setup listener for incoming stream
-//        var streamListenerTask = Task.Factory.StartNew(async () =>
-//            {
-//               
-//
-//
-//        await tcs.Task;
-//
-//
-//    }
-
-   
 
 
 
