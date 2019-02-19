@@ -218,6 +218,12 @@ namespace Proto.Client
            
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
             
+            if (_activeClients.Count <= 0)
+            {
+                  Logger.LogWarning($"Message {message.GetType()} for {target} could not be sent locally to {ProcessRegistry.Instance.Address} or delivered remotely - no active endpoints available ");
+                 
+            }
+            
             
             var env = new RemoteDeliver(header, message, target, sender, serializerId);
             
