@@ -17,15 +17,30 @@ namespace Proto.Schedulers.SimpleScheduler
         {
             _context = context;
         }
-        
+
         public ISimpleScheduler ScheduleTellOnce(TimeSpan delay, PID target, object message)
         {
+            CancellationTokenSource cts;
+            return ScheduleTellOnce(delay, target, message, out cts);
+        }
+
+        public ISimpleScheduler ScheduleTellOnce(TimeSpan delay, PID target, object message, out CancellationTokenSource cancellationTokenSource)
+        {
+            var cts = new CancellationTokenSource();
+            
             Task.Run(async () =>
             {
-                await Task.Delay(delay);
+                await Task.Delay(delay, cts.Token);
 
+                if (cts.IsCancellationRequested)
+                {
+                    return;
+                }
                 _context.Send(target, message);
+                
             });
+            
+            cancellationTokenSource = cts;
 
             return this;
         }
@@ -62,13 +77,27 @@ namespace Proto.Schedulers.SimpleScheduler
 
         public ISimpleScheduler ScheduleRequestOnce(TimeSpan delay, PID sender, PID target, object message)
         {
+            CancellationTokenSource cts;
+            return ScheduleRequestOnce(delay, sender, target, message, out cts);
+        }
+
+        public ISimpleScheduler ScheduleRequestOnce(TimeSpan delay, PID sender, PID target, object message, out CancellationTokenSource cancellationTokenSource)
+        {
+            var cts = new CancellationTokenSource();
+            
             Task.Run(async () =>
             {
-                await Task.Delay(delay);
+                await Task.Delay(delay, cts.Token);
 
+                if (cts.IsCancellationRequested)
+                {
+                    return;
+                }
                 //TODO: allow custom sender
                 _context.Request(target, message);
             });
+
+            cancellationTokenSource = cts;
 
             return this;
         }
