@@ -14,7 +14,7 @@ namespace Proto.Client
 {
     public class Client : IDisposable
     {
-        private static readonly ILogger Logger = Log.CreateLogger<Client>();
+        private static readonly ILogger _logger = Log.CreateLogger<Client>();
         private static readonly List<Client> _activeClients = new List<Client>();
         private static readonly List<string> _allAddresses = new List<string>();
         private static readonly string _clientId = Guid.NewGuid().ToString();
@@ -40,8 +40,10 @@ namespace Proto.Client
             
             if (_activeClients.Count <= 0)
             {
+                _logger.LogTrace("No active clients setting up new rpc connection");
                 if (_channel == null || _channel.State != ChannelState.Ready)
                 {
+                    _logger.LogTrace("Creating channel for connection");
                     //THis hangs around even when there are no client rpcs
                     _channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
                     _client = new ClientRemoting.ClientRemotingClient(_channel);
@@ -53,28 +55,34 @@ namespace Proto.Client
                 var connectionHeaders = new Metadata() {{"clientid", _clientId}};
                 
                 _clientStreams = _client.ConnectClient(connectionHeaders, null, connectionCancellationToken.Token);
+                
+                
                
                 _receivedClientAddressTCS = new TaskCompletionSource<string>();
                 connectionCancellationToken.Token.Register(() =>
-                {
-                    _receivedClientAddressTCS.TrySetCanceled();
-                });
+                    {
+                        _receivedClientAddressTCS.TrySetException(
+                            new TimeoutException("Could not connect to server before timeout."));
+                    });
                 
-                
+                _logger.LogDebug("Got client streams");
                
 
                 _endpointWriter =
                     RootContext.Empty.Spawn(Props.FromProducer(() =>
                         new ClientEndpointWriter(_clientStreams.RequestStream)));
+                
+                _logger.LogDebug("Created Endpoint Writer");
             
                 ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess( pid));
 
 
                 var listenerTask = Task.Factory.StartNew(IncomingStreamListener);
             
+                _logger.LogDebug("Waiting for address");
                 //We need to wait until the clienthostaddress has been set
                 //Use a cancellation token to time out on this if it doesn't return in time
-                _receivedClientAddressTCS.Task.Wait();
+                _receivedClientAddressTCS.Task.GetAwaiter().GetResult();
                 
                 // No need to wait for cancellation anymore 
                 connectionCancellationToken.Dispose();
@@ -99,7 +107,7 @@ namespace Proto.Client
                 while (await responseStream.MoveNext(_cancelListeningToken.Token)
                 ) //Need to work out how this might be cancelled
                 {
-                    Logger.LogDebug("Received Message Batch");
+                    _logger.LogDebug("Received Message Batch");
                     var messageBatch = responseStream.Current;
                     foreach (var envelope in messageBatch.Envelopes)
                     {
@@ -120,7 +128,7 @@ namespace Proto.Client
                         }
 
 
-                        Logger.LogDebug(
+                        _logger.LogDebug(
                             $"Opened Envelope from {envelope.Sender} for {target} containing message {message}");
                         //todo: Need to convert the headers here
                         var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, null);
@@ -150,7 +158,7 @@ namespace Proto.Client
                     }
                 }
 
-                Logger.LogCritical(ex, $"Exception Thrown from inside stream listener task");
+                _logger.LogCritical(ex, $"Exception Thrown from inside stream listener task");
                 throw ex;
             }
 
@@ -220,7 +228,7 @@ namespace Proto.Client
             
             if (_activeClients.Count <= 0)
             {
-                  Logger.LogWarning($"Message {message.GetType()} for {target} could not be sent locally to {ProcessRegistry.Instance.Address} or delivered remotely - no active endpoints available ");
+                  _logger.LogWarning($"Message {message.GetType()} for {target} could not be sent locally to {ProcessRegistry.Instance.Address} or delivered remotely - no active endpoints available ");
                  
             }
             
