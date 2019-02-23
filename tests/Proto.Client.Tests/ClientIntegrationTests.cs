@@ -41,7 +41,7 @@ namespace Proto.Client.Tests
         public async void CanSendJsonAndReceiveToClient()
         {
             
-            using(var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
+            using(var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
             {
                 var clientHostActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
                 var ct = new CancellationTokenSource(30000);
@@ -76,7 +76,7 @@ namespace Proto.Client.Tests
         public async void CanRequestAsyncToRemoteFromClientActor()
         {
 
-            using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
+            using (var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
             {
                 var remoteActor = new PID(_remoteManager.RemoteNode.Address, "EchoActorInstance");
             
@@ -118,7 +118,7 @@ namespace Proto.Client.Tests
         [Fact, DisplayTestMethodName]
         public async void CanSpawnRemoteActor()
         {
-            using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
+            using (var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
             {
                 var remoteActorName = Guid.NewGuid().ToString();
                 var remoteActorResp = await client.SpawnNamedAsync(_remoteManager.DefaultNode.Address, remoteActorName,
@@ -134,10 +134,10 @@ namespace Proto.Client.Tests
         [Fact, DisplayTestMethodName]
         public async void CanGetClientHostAddress()
         {
-            using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
+            using (var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
             {
-                var address = await client.GetClientHostAddress();
-                Assert.Equal("127.0.0.1:12000", address);
+                var pid = await client.GetClientHostPID();
+                Assert.Equal("127.0.0.1:12000", pid.Address);
             }
 
         }
@@ -145,7 +145,7 @@ namespace Proto.Client.Tests
         [Fact, DisplayTestMethodName]
         public async void CanSpawnClientHostActor()
         {
-            using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
+            using (var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
             {
                 var remoteActorName = Guid.NewGuid().ToString();
                 var remoteActorResp =
@@ -164,7 +164,7 @@ namespace Proto.Client.Tests
         {
             PID remoteActor;
             string firstAddress;
-            using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
+            using (var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
             {
                 var remoteActorName = "EchoActor_" + Guid.NewGuid().ToString();
                 var remoteActorResp =
@@ -177,7 +177,7 @@ namespace Proto.Client.Tests
             }
 
             
-            using (var client = new Client("127.0.0.1", 12000, new RemoteConfig()))
+            using (var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
             {
 
                 var pong2 = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
@@ -191,7 +191,7 @@ namespace Proto.Client.Tests
         public async void CanOverlapConnections()
         {
 
-            var client1 = new Client("127.0.0.1", 12000, new RemoteConfig());
+            var client1 = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig());
             var firstAddress = ProcessRegistry.Instance.Address;
             
             var remoteActorName = "EchoActor_" + Guid.NewGuid().ToString();
@@ -203,7 +203,7 @@ namespace Proto.Client.Tests
             
             Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
             
-            var client2 = new Client("127.0.0.1", 12000, new RemoteConfig());   
+            var client2 = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig());   
             
 
 

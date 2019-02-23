@@ -25,17 +25,21 @@ namespace Proto.Client {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgxQcm90b3MucHJvdG8SBmNsaWVudBoYUHJvdG8uQWN0b3IvcHJvdG9zLnBy",
-            "b3RvGhlQcm90by5SZW1vdGUvcHJvdG9zLnByb3RvIjAKD1Byb3h5UGlkUmVx",
-            "dWVzdBIdCgljbGllbnRQSUQYASABKAsyCi5hY3Rvci5QSUQiMAoQUHJveHlQ",
-            "aWRSZXNwb25zZRIcCghwcm94eVBJRBgCIAEoCzIKLmFjdG9yLlBJRCIZChdD",
-            "bGllbnRDb25uZWN0aW9uU3RhcnRlZCJKChJDbGllbnRNZXNzYWdlQmF0Y2gS",
-            "DwoHYWRkcmVzcxgBIAEoCRIjCgViYXRjaBgCIAEoCzIULnJlbW90ZS5NZXNz",
-            "YWdlQmF0Y2gyWQoOQ2xpZW50UmVtb3RpbmcSRwoNQ29ubmVjdENsaWVudBIa",
-            "LmNsaWVudC5DbGllbnRNZXNzYWdlQmF0Y2gaFC5yZW1vdGUuTWVzc2FnZUJh",
-            "dGNoIgAoATABQg+qAgxQcm90by5DbGllbnRiBnByb3RvMw=="));
+            "b3RvGhlQcm90by5SZW1vdGUvcHJvdG9zLnByb3RvIiAKHkFjcXVpcmVDbGll",
+            "bnRFbmRwb2ludFJlZmVyZW5jZSIgCh5SZWxlYXNlQ2xpZW50RW5kcG9pbnRS",
+            "ZWZlcmVuY2UiMAoPUHJveHlQaWRSZXF1ZXN0Eh0KCWNsaWVudFBJRBgBIAEo",
+            "CzIKLmFjdG9yLlBJRCIwChBQcm94eVBpZFJlc3BvbnNlEhwKCHByb3h5UElE",
+            "GAIgASgLMgouYWN0b3IuUElEIhkKF0NsaWVudENvbm5lY3Rpb25TdGFydGVk",
+            "IkoKEkNsaWVudE1lc3NhZ2VCYXRjaBIPCgdhZGRyZXNzGAEgASgJEiMKBWJh",
+            "dGNoGAIgASgLMhQucmVtb3RlLk1lc3NhZ2VCYXRjaDJZCg5DbGllbnRSZW1v",
+            "dGluZxJHCg1Db25uZWN0Q2xpZW50EhouY2xpZW50LkNsaWVudE1lc3NhZ2VC",
+            "YXRjaBoULnJlbW90ZS5NZXNzYWdlQmF0Y2giACgBMAFCD6oCDFByb3RvLkNs",
+            "aWVudGIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, global::Proto.Remote.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.AcquireClientEndpointReference), global::Proto.Client.AcquireClientEndpointReference.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ReleaseClientEndpointReference), global::Proto.Client.ReleaseClientEndpointReference.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ProxyPidRequest), global::Proto.Client.ProxyPidRequest.Parser, new[]{ "ClientPID" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ProxyPidResponse), global::Proto.Client.ProxyPidResponse.Parser, new[]{ "ProxyPID" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientConnectionStarted), global::Proto.Client.ClientConnectionStarted.Parser, null, null, null, null),
@@ -46,6 +50,208 @@ namespace Proto.Client {
 
   }
   #region Messages
+  public sealed partial class AcquireClientEndpointReference : pb::IMessage<AcquireClientEndpointReference> {
+    private static readonly pb::MessageParser<AcquireClientEndpointReference> _parser = new pb::MessageParser<AcquireClientEndpointReference>(() => new AcquireClientEndpointReference());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<AcquireClientEndpointReference> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[0]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public AcquireClientEndpointReference() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public AcquireClientEndpointReference(AcquireClientEndpointReference other) : this() {
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public AcquireClientEndpointReference Clone() {
+      return new AcquireClientEndpointReference(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as AcquireClientEndpointReference);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(AcquireClientEndpointReference other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(AcquireClientEndpointReference other) {
+      if (other == null) {
+        return;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class ReleaseClientEndpointReference : pb::IMessage<ReleaseClientEndpointReference> {
+    private static readonly pb::MessageParser<ReleaseClientEndpointReference> _parser = new pb::MessageParser<ReleaseClientEndpointReference>(() => new ReleaseClientEndpointReference());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ReleaseClientEndpointReference> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[1]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ReleaseClientEndpointReference() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ReleaseClientEndpointReference(ReleaseClientEndpointReference other) : this() {
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ReleaseClientEndpointReference Clone() {
+      return new ReleaseClientEndpointReference(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ReleaseClientEndpointReference);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ReleaseClientEndpointReference other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ReleaseClientEndpointReference other) {
+      if (other == null) {
+        return;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+        }
+      }
+    }
+
+  }
+
   public sealed partial class ProxyPidRequest : pb::IMessage<ProxyPidRequest> {
     private static readonly pb::MessageParser<ProxyPidRequest> _parser = new pb::MessageParser<ProxyPidRequest>(() => new ProxyPidRequest());
     private pb::UnknownFieldSet _unknownFields;
@@ -54,7 +260,7 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -189,7 +395,7 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -324,7 +530,7 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -425,7 +631,7 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

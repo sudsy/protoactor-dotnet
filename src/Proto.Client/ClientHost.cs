@@ -34,7 +34,7 @@ namespace Proto.Client
                 return isClientAddress(pid.Address) ? new ClientProcess(pid) : null;
             });
             
-            var clientEndpointManager = new ClientEndpointManager(addr);
+            var clientEndpointManager = new ClientHostEndpointManager(addr);
             config.AdditionalServices = new List<ServerServiceDefinition>
             {
                 ClientRemoting.BindService(clientEndpointManager)

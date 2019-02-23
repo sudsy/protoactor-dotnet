@@ -21,7 +21,7 @@ namespace Proto.Client.Tests
         public void TimeoutOnConnectFailure()
         {
                       
-            Assert.Throws<AggregateException>(() => { new Client("127.0.0.1", 12222, new RemoteConfig(), 1000); });
+            Assert.ThrowsAsync<TimeoutException>(async () => { await Client.CreateAsync("127.0.0.1", 12222, new RemoteConfig(), 1000); });
 
         }
 

@@ -5,6 +5,14 @@ option csharp_namespace = "Proto.Client";
 import "Proto.Actor/protos.proto";
 import "Proto.Remote/protos.proto";
 
+message AcquireClientEndpointReference{
+    
+}
+
+message ReleaseClientEndpointReference{
+
+}
+
 message ProxyPidRequest {
     actor.PID clientPID = 1;
 }
