@@ -34,17 +34,19 @@ namespace Proto.Client.Tests
             Log.SetLoggerFactory(new LoggerFactory().AddConsole(LogLevel.Debug));
            
         }
-
+        
+       
         
         
         [Fact, DisplayTestMethodName]
         public async void CanSendJsonAndReceiveToClient()
         {
             
-            using(var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
+                
+            using(var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig(), 10000))
             {
                 var clientHostActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
-                var ct = new CancellationTokenSource(30000);
+                var ct = new CancellationTokenSource(60000);
                 var tcs = new TaskCompletionSource<bool>();
                 ct.Token.Register(() =>
                 {
