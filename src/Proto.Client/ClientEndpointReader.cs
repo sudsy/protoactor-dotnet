@@ -19,7 +19,8 @@ namespace Proto.Client
         private AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
         private TaskCompletionSource<PID> _clientHostPIDTCS = new TaskCompletionSource<PID>();
         private bool _disposed;
-        
+        private CancellationTokenSource _cancelWaitingForPID;
+
 
         static ClientEndpointReader()
         {
@@ -28,14 +29,19 @@ namespace Proto.Client
         
         public ClientEndpointReader(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
+            _cancelWaitingForPID = new CancellationTokenSource(connectionTimeoutMs);
+            _cancelWaitingForPID.Token.Register(this.Dispose);
+            
             _disposed = false;
             if (_channel == null || _channel.State != ChannelState.Ready)
             {
                 _logger.LogTrace("Creating channel for connection");
                 //THis hangs around even when there are no client rpcs
+               
                 _channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
                 _client = new ClientRemoting.ClientRemotingClient(_channel);
-               
+                
+
             }
             
             var connectionHeaders = new Metadata() {{"clientid", _clientId}};
@@ -85,6 +91,8 @@ namespace Proto.Client
 
                         if (message is ClientConnectionStarted)
                         {
+                            _cancelWaitingForPID?.Dispose();
+                            _cancelWaitingForPID = null;
                             _clientHostPIDTCS.SetResult(envelope.Sender);
 //                            _clientHostAddress = envelope.Sender.Address;
 //                            _allAddresses.Add(_clientHostAddress);
@@ -138,6 +146,7 @@ namespace Proto.Client
           //Wait for the end of stream for the reader
                 
           _clientStreams?.Dispose();
+          
           
       }
 

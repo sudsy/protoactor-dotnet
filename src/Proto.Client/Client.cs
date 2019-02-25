@@ -16,8 +16,10 @@ namespace Proto.Client
     {
         private static readonly ILogger _logger = Log.CreateLogger<Client>();
         private static PID _clientMarshaller;
+        private static Tuple<string, int> _endpointConfig;
         
         private ClientEndpointReader _endpointReader;
+        
 
 
         static Client()
@@ -27,15 +29,27 @@ namespace Proto.Client
 
         public static async Task<Client> CreateAsync(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
+            
+            var endpointConfig = Tuple.Create(hostname, port);
+            if (_endpointConfig != null & !endpointConfig.Equals(_endpointConfig))
+            {
+                throw new InvalidOperationException("Can't connect to multiple client hosts");
+            }
             if (_clientMarshaller == null)
             {
-                _clientMarshaller =
-                    RootContext.Empty.SpawnNamed(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)), "clientMarshaller");
+                var clientMarshaller =
+                    RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)), "clientMarshaller");
+                var clientEndpointManager = await RootContext.Empty.RequestAsync<ClientEndpointReader>(clientMarshaller, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs));
+                _clientMarshaller = clientMarshaller;
+                _endpointConfig = endpointConfig;
+                return new Client(clientEndpointManager);    
             }
             
-            var clientEndpointManager = await RootContext.Empty.RequestAsync<ClientEndpointReader>(_clientMarshaller, new AcquireClientEndpointReference());
             
-            return new Client(clientEndpointManager);
+            return new Client(await RootContext.Empty.RequestAsync<ClientEndpointReader>(_clientMarshaller, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs)));  
+            
+            
+            
         }
 
         internal Client(ClientEndpointReader endpointReader)

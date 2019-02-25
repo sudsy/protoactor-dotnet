@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Proto.Remote;
 
@@ -27,12 +28,14 @@ namespace Proto.Client
                 case AcquireClientEndpointReference _:
                     if (_clientEndpointReader == null)
                     {
-                        _clientEndpointReader = new ClientEndpointReader(_hostName, _port, _config, _connectionTimeoutMs);
-                    
-                        //TODO, catch a connection error here and reset the reference to nulll
-                        var hostPID = await _clientEndpointReader.GetClientHostPID();
-                        ProcessRegistry.Instance.Address = "client://" + hostPID.Address + "/" + hostPID.Id;
                         
+                      
+                        var clientEndpointReader = new ClientEndpointReader(_hostName, _port, _config, _connectionTimeoutMs);
+                        var hostPid = await clientEndpointReader.GetClientHostPID();
+                        _clientEndpointReader = clientEndpointReader;
+                        ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
+                           
+                    
                         
                     }
                     
