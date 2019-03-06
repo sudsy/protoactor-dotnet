@@ -10,16 +10,11 @@ namespace Proto.Client
     public class ClientEndpointReader : IDisposable
     {
         private static readonly ILogger _logger = Log.CreateLogger<ClientEndpointReader>();
-        private static readonly string _clientId = Guid.NewGuid().ToString();
         
-        private static Channel _channel;
-        private static ClientRemoting.ClientRemotingClient _client;
-        
-        private PID _endpointWriter;
-        private AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
         private TaskCompletionSource<PID> _clientHostPIDTCS = new TaskCompletionSource<PID>();
         private bool _disposed;
         private CancellationTokenSource _cancelWaitingForPID;
+        private IAsyncStreamReader<MessageBatch> _responseStream;
 
 
         static ClientEndpointReader()
@@ -27,36 +22,15 @@ namespace Proto.Client
             ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess( pid));
         }
         
-        public ClientEndpointReader(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
+        public ClientEndpointReader(IAsyncStreamReader<MessageBatch> responseStream, int connectionTimeoutMs = 10000)
         {
             _cancelWaitingForPID = new CancellationTokenSource(connectionTimeoutMs);
             _cancelWaitingForPID.Token.Register(this.Dispose);
             
             _disposed = false;
-            if (_channel == null || _channel.State != ChannelState.Ready)
-            {
-                _logger.LogTrace("Creating channel for connection");
-                //THis hangs around even when there are no client rpcs
-               
-                _channel = new Channel(hostname, port, config.ChannelCredentials, config.ChannelOptions);
-                _client = new ClientRemoting.ClientRemotingClient(_channel);
-                
 
-            }
-            
-            var connectionHeaders = new Metadata() {{"clientid", _clientId}};
-                
-            _clientStreams = _client.ConnectClient(connectionHeaders, null);
-                
-                
-            _logger.LogDebug("Got client streams");
-               
+            _responseStream = responseStream;
 
-            _endpointWriter =
-                RootContext.Empty.Spawn(Props.FromProducer(() =>
-                    new ClientEndpointWriter(_clientStreams.RequestStream)));
-                
-            _logger.LogDebug("Created Endpoint Writer");
             
             var listenerTask = Task.Run(IncomingStreamListener);
 
@@ -67,20 +41,17 @@ namespace Proto.Client
             return _clientHostPIDTCS.Task;
         }
 
-        public PID GetEndpointWriter()
-        {
-            return _endpointWriter;
-        }
+    
         
         private async Task IncomingStreamListener()
         {
             try
             {
-                var responseStream = _clientStreams.ResponseStream;
-                while (await responseStream.MoveNext(new CancellationToken())) //Need to work out how this might be cancelled
+                
+                while (await _responseStream.MoveNext(new CancellationToken())) //Need to work out how this might be cancelled
                 {
                     _logger.LogDebug("Received Message Batch");
-                    var messageBatch = responseStream.Current;
+                    var messageBatch = _responseStream.Current;
                     foreach (var envelope in messageBatch.Envelopes)
                     {
                         var target = new PID(ProcessRegistry.Instance.Address,
@@ -134,6 +105,7 @@ namespace Proto.Client
                 }
 
                 _logger.LogCritical(ex, $"Exception Thrown from inside stream listener task");
+                
                 throw ex;
             }
 
@@ -142,10 +114,7 @@ namespace Proto.Client
       public void Dispose()
       {
           _disposed = true;
-          _endpointWriter.PoisonAsync().Wait();
-          //Wait for the end of stream for the reader
-                
-          _clientStreams?.Dispose();
+          
           
           
       }
