@@ -15,11 +15,11 @@ namespace Proto.Client
     public class Client : IDisposable
     {
         private static readonly ILogger _logger = Log.CreateLogger<Client>();
-        private static PID _clientMarshaller;
+        private static PID _clientEndpointManager;
         private static Tuple<string, int> _endpointConfig;
         
-        private ClientEndpointReader _endpointReader;
         
+        private PID _clientHostPID;
 
 
         static Client()
@@ -35,26 +35,27 @@ namespace Proto.Client
             {
                 throw new InvalidOperationException("Can't connect to multiple client hosts");
             }
-            if (_clientMarshaller == null)
+            if (_clientEndpointManager == null)
             {
-                var clientMarshaller =
+                var clientEndpointManager =
                     RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)), "clientMarshaller");
-                var clientEndpointManager = await RootContext.Empty.RequestAsync<ClientEndpointReader>(clientMarshaller, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs));
-                _clientMarshaller = clientMarshaller;
+                await RootContext.Empty.RequestAsync<int>(clientEndpointManager, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs));
+                _clientEndpointManager = clientEndpointManager;
                 _endpointConfig = endpointConfig;
-                return new Client(clientEndpointManager);    
+                return new Client();    
             }
-            
-            
-            return new Client(await RootContext.Empty.RequestAsync<ClientEndpointReader>(_clientMarshaller, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs)));  
+
+            await RootContext.Empty.RequestAsync<int>(_clientEndpointManager, new AcquireClientEndpointReference(),
+                TimeSpan.FromMilliseconds(connectionTimeoutMs));
+            return new Client();  
             
             
             
         }
 
-        internal Client(ClientEndpointReader endpointReader)
+        private Client()
         {
-            _endpointReader = endpointReader;
+            
         }
 
       
@@ -69,10 +70,15 @@ namespace Proto.Client
             return Remote.Remote.SpawnAsync(address, kind, timeout);
         }
 
-        public Task<PID> GetClientHostPID()
+        public async Task<PID> GetClientHostPID()
         {
+            if (_clientHostPID != null)
+            {
+                return _clientHostPID;
+            }
+            _clientHostPID = await RootContext.Empty.RequestAsync<PID>(_clientEndpointManager, "getclienthostpid");
+            return _clientHostPID;
 
-            return _endpointReader.GetClientHostPID();
 
         }
 
@@ -93,7 +99,7 @@ namespace Proto.Client
         public void Dispose()
         {
 
-            RootContext.Empty.Send(_clientMarshaller, new ReleaseClientEndpointReference());
+            RootContext.Empty.Send(_clientEndpointManager, new ReleaseClientEndpointReference());
             
         }
         
@@ -107,7 +113,7 @@ namespace Proto.Client
             var env = new RemoteDeliver(header, message, target, sender, serializerId);
             
 
-            RootContext.Empty.Send(_clientMarshaller, env);
+            RootContext.Empty.Send(_clientEndpointManager, env);
 
         }
     

@@ -25,6 +25,12 @@ namespace Proto.Client
         {
             switch (context.Message)
             {
+                case String str:
+                    if (str == "getclienthostpid")
+                    {
+                        context.Respond(await _clientEndpointReader.GetClientHostPID());
+                    }
+                    break;
                 case AcquireClientEndpointReference _:
                     if (_clientEndpointReader == null)
                     {
@@ -40,8 +46,8 @@ namespace Proto.Client
                     }
                     
                     
-                    context.Respond(_clientEndpointReader);
                     _endpointReferenceCount++;
+                    context.Respond(_endpointReferenceCount);
                     break;
                 
                 case ReleaseClientEndpointReference _:
