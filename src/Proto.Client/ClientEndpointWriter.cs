@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Timeout;
 using Proto.Remote;
 
 namespace Proto.Client
@@ -35,12 +38,30 @@ namespace Proto.Client
                         Batch = batch
                     };
             
-                    await _requestStream.WriteAsync(clientBatch);
+                    await WriteWithTimeout(clientBatch, TimeSpan.FromSeconds(30));
+                    
+                    Logger.LogDebug($"Sent RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
                     break;
                     
             }
            
 
+        }
+        
+        private async Task WriteWithTimeout(ClientMessageBatch batch, TimeSpan timeout)
+        {
+            var timeoutPolicy = Policy.TimeoutAsync(timeout, TimeoutStrategy.Pessimistic);
+
+            try
+            {
+                await timeoutPolicy.ExecuteAsync(() => _requestStream.WriteAsync(batch));
+            }
+            catch
+            {
+                Logger.LogError($"DeadLetter - could not send client message batch {batch} to server");
+            }
+            
+            
         }
 
       

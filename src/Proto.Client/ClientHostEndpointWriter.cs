@@ -3,6 +3,8 @@ using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Timeout;
 using Proto.Remote;
 
 namespace Proto.Client
@@ -10,7 +12,7 @@ namespace Proto.Client
     public class ClientHostEndpointWriter :IActor
     {
         private readonly IServerStreamWriter<MessageBatch> _responseStream;
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(ClientHostEndpointWriter).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger<ClientEndpointWriter>();
 
         public ClientHostEndpointWriter(IServerStreamWriter<MessageBatch> responseStream)
         {
@@ -31,7 +33,7 @@ namespace Proto.Client
                     break;
 
                 case ClientMessageBatch cmb:
-                    await _responseStream.WriteAsync(cmb.Batch);
+                    await WriteWithTimeout(cmb.Batch, TimeSpan.FromSeconds(30));
                     break;
 
                 case RemoteDeliver rd:
@@ -40,7 +42,7 @@ namespace Proto.Client
 
                     var batch = rd.getMessageBatch();
            
-                    await _responseStream.WriteAsync(batch);
+                    await WriteWithTimeout(batch, TimeSpan.FromSeconds(30));
             
                     Logger.LogDebug($"Sent RemoteDeliver message {rd.Message} to {rd.Target.Id}");
                     
@@ -50,6 +52,22 @@ namespace Proto.Client
             
            
 
+        }
+
+        private async Task WriteWithTimeout(MessageBatch batch, TimeSpan timeout)
+        {
+            var timeoutPolicy = Policy.TimeoutAsync(timeout, TimeoutStrategy.Pessimistic);
+
+            try
+            {
+                await timeoutPolicy.ExecuteAsync(() => _responseStream.WriteAsync(batch));
+            }
+            catch
+            {
+                Logger.LogError($"DeadLetter - could not send message batch {batch} to client");
+            }
+            
+            
         }
     }
 }

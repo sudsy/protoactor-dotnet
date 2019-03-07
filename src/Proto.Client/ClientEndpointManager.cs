@@ -23,6 +23,7 @@ namespace Proto.Client
         private int _connectionTimeoutMs;
         
         private PID _endpointWriter;
+        private bool _hostPIDSet;
 
         public ClientEndpointManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
@@ -47,27 +48,18 @@ namespace Proto.Client
                            
 //                            disposeConnection();
                             connectToServer(context.Self);
-                            connectReaderAndWriterWithLazyAddressUpdate(context);
+                            await connectReaderAndWriter(context);
 
                             break;
                     }
                     
                     break;
                 case AcquireClientEndpointReference _:
-                    if (_clientEndpointReader == null)
+                    if (_clientEndpointReader == null || _channel.State != ChannelState.Ready)
                     {
                         connectToServer(context.Self);
-                        
-                        var clientEndpointReader = new ClientEndpointReader(context.Self, _clientStreams.ResponseStream, _connectionTimeoutMs);
-                        var hostPid = await clientEndpointReader.GetClientHostPID();
-                        _clientEndpointReader = clientEndpointReader;
-                        _endpointWriter =
-                            RootContext.Empty.Spawn(Props.FromProducer(() =>
-                                new ClientEndpointWriter(_clientStreams.RequestStream)));
 
-                        _logger.LogDebug("Created Endpoint Writer");
-
-                        ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
+                        await connectReaderAndWriter(context);
                     }
                     
                     _endpointReferenceCount++;
@@ -90,8 +82,9 @@ namespace Proto.Client
                         _logger.LogInformation("Connection Failed Trying to send Retrying connection");
                            
                         connectToServer(context.Self);
-                        connectReaderAndWriterWithLazyAddressUpdate(context);
+                        await connectReaderAndWriter(context);
                     }
+                    _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer");
                     context.Forward(_endpointWriter);
                     break;
                 
@@ -100,31 +93,43 @@ namespace Proto.Client
             return;
         }
 
-        private void connectReaderAndWriterWithLazyAddressUpdate(IContext context)
+        private async Task connectReaderAndWriter(IContext context)
         {
-            _clientEndpointReader = new ClientEndpointReader(context.Self, _clientStreams.ResponseStream, _connectionTimeoutMs);
+            var clientEndpointReader = new ClientEndpointReader(context.Self, _clientStreams.ResponseStream, _connectionTimeoutMs);
+            if (!_hostPIDSet)
+            {
+                var hostPid = await clientEndpointReader.GetClientHostPID();
+                ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
+                _hostPIDSet = true;
+            }
+
+            _clientEndpointReader = clientEndpointReader;
             _endpointWriter =
                 RootContext.Empty.Spawn(Props.FromProducer(() =>
                     new ClientEndpointWriter(_clientStreams.RequestStream)));
-            context.Spawn(Props.FromFunc(async ctx =>
+            if (_hostPIDSet)
             {
-                switch (ctx.Message)
+                context.Spawn(Props.FromFunc(async ctx =>
                 {
-                    case Started _:
-                        try
-                        {
-                            var hostPid = await _clientEndpointReader.GetClientHostPID();
-                            ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
-                        }
-                        catch
-                        {
-                            //Ignore if this times out
-                            _logger.LogInformation("Failed to retrieve host id on reconnect");
-                        }
+                    switch (ctx.Message)
+                    {
+                        case Started _:
+                            try
+                            {
+                                var hostPid = await _clientEndpointReader.GetClientHostPID();
+                                ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
+                            }
+                            catch
+                            {
+                                //Ignore if this times out
+                                _logger.LogInformation("Failed to retrieve host id on reconnect");
+                            }
 
-                        break;
-                }
-            }));
+                            break;
+                    }
+                }));
+            }
+           
         }
 
         private void disposeConnection()
