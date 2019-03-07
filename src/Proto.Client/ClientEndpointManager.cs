@@ -37,47 +37,38 @@ namespace Proto.Client
             switch (context.Message)
             {
                 case String str:
-                    if (str == "getclienthostpid")
+                    switch (str)
                     {
-                        context.Respond(await _clientEndpointReader.GetClientHostPID());
+                        case "getclienthostpid":
+                            context.Respond(await _clientEndpointReader.GetClientHostPID());
+                            break;
+                        case "connectionfailure":
+                            _logger.LogInformation("Connection Failed Retrying connection");
+                           
+//                            disposeConnection();
+                            connectToServer(context.Self);
+                            connectReaderAndWriterWithLazyAddressUpdate(context);
+
+                            break;
                     }
+                    
                     break;
                 case AcquireClientEndpointReference _:
                     if (_clientEndpointReader == null)
                     {
+                        connectToServer(context.Self);
                         
-                        if (_channel == null || _channel.State != ChannelState.Ready)
-                        {
-                            _logger.LogTrace("Creating channel for connection");
-                            //THis hangs around even when there are no client rpcs
-               
-                            _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
-                            _client = new ClientRemoting.ClientRemotingClient(_channel);
-                
-
-                        }
-            
-                        var connectionHeaders = new Metadata() {{"clientid", _clientId}};
-                
-                        _clientStreams = _client.ConnectClient(connectionHeaders, null);
-                
-                
-                        _logger.LogDebug("Got client streams");
-                        var clientEndpointReader = new ClientEndpointReader(_clientStreams.ResponseStream,  _connectionTimeoutMs);
+                        var clientEndpointReader = new ClientEndpointReader(context.Self, _clientStreams.ResponseStream, _connectionTimeoutMs);
                         var hostPid = await clientEndpointReader.GetClientHostPID();
                         _clientEndpointReader = clientEndpointReader;
                         _endpointWriter =
                             RootContext.Empty.Spawn(Props.FromProducer(() =>
                                 new ClientEndpointWriter(_clientStreams.RequestStream)));
-                
+
                         _logger.LogDebug("Created Endpoint Writer");
-                        
+
                         ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
-                           
-                    
-                        
                     }
-                    
                     
                     _endpointReferenceCount++;
                     context.Respond(_endpointReferenceCount);
@@ -87,17 +78,20 @@ namespace Proto.Client
                     _endpointReferenceCount--;
                     if (_endpointReferenceCount <= 0)
                     {
-                        _endpointWriter.PoisonAsync().Wait();
-                        //Wait for the end of stream for the reader
-                
-                        _clientEndpointReader.Dispose();
-                        _clientEndpointReader = null;
-                        _clientStreams?.Dispose();
+                        disposeConnection();
                     }
 
                     break;
                 
                 case RemoteDeliver rd:
+                    if (_channel.State != ChannelState.Ready)
+                    {
+                        
+                        _logger.LogInformation("Connection Failed Trying to send Retrying connection");
+                           
+                        connectToServer(context.Self);
+                        connectReaderAndWriterWithLazyAddressUpdate(context);
+                    }
                     context.Forward(_endpointWriter);
                     break;
                 
@@ -105,5 +99,71 @@ namespace Proto.Client
 
             return;
         }
+
+        private void connectReaderAndWriterWithLazyAddressUpdate(IContext context)
+        {
+            _clientEndpointReader = new ClientEndpointReader(context.Self, _clientStreams.ResponseStream, _connectionTimeoutMs);
+            _endpointWriter =
+                RootContext.Empty.Spawn(Props.FromProducer(() =>
+                    new ClientEndpointWriter(_clientStreams.RequestStream)));
+            context.Spawn(Props.FromFunc(async ctx =>
+            {
+                switch (ctx.Message)
+                {
+                    case Started _:
+                        try
+                        {
+                            var hostPid = await _clientEndpointReader.GetClientHostPID();
+                            ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
+                        }
+                        catch
+                        {
+                            //Ignore if this times out
+                            _logger.LogInformation("Failed to retrieve host id on reconnect");
+                        }
+
+                        break;
+                }
+            }));
+        }
+
+        private void disposeConnection()
+        {
+            _endpointWriter.PoisonAsync().Wait();
+            //Wait for the end of stream for the reader
+
+            _clientEndpointReader.Dispose();
+            _clientEndpointReader = null;
+            _clientStreams?.Dispose();
+        }
+
+        private void connectToServer(PID endpointManager)
+        {
+            if (_channel == null || _channel.State != ChannelState.Ready)
+            {
+                _logger.LogTrace("Creating channel for connection");
+                //THis hangs around even when there are no client rpcs
+
+                _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
+                _client = new ClientRemoting.ClientRemotingClient(_channel);
+            }
+
+            var connectionHeaders = new Metadata() {{"clientid", _clientId}};
+
+            _clientStreams = _client.ConnectClient(connectionHeaders, null);
+
+
+            _logger.LogDebug("Got client streams");
+            
+        }
+
+//        private async Task retryConnection(PID endpointManager, int retryInterval)
+//        {
+//            while (_channel.State != ChannelState.Ready)
+//            {
+//                disposeConnection();
+//                await connectToServer(endpointManager, retryInterval);
+//            }
+//        }
     }
 }

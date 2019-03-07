@@ -15,6 +15,7 @@ namespace Proto.Client
         private bool _disposed;
         private CancellationTokenSource _cancelWaitingForPID;
         private IAsyncStreamReader<MessageBatch> _responseStream;
+        private PID _endpointManager;
 
 
         static ClientEndpointReader()
@@ -22,13 +23,14 @@ namespace Proto.Client
             ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess( pid));
         }
         
-        public ClientEndpointReader(IAsyncStreamReader<MessageBatch> responseStream, int connectionTimeoutMs = 10000)
+        public ClientEndpointReader(PID endpointManager, IAsyncStreamReader<MessageBatch> responseStream, int connectionTimeoutMs = 10000)
         {
             _cancelWaitingForPID = new CancellationTokenSource(connectionTimeoutMs);
             _cancelWaitingForPID.Token.Register(this.Dispose);
             
             _disposed = false;
 
+            _endpointManager = endpointManager;
             _responseStream = responseStream;
 
             
@@ -87,25 +89,25 @@ namespace Proto.Client
             catch (Exception ex)
             {
                 
-                if (ex is RpcException rpcEx)
-                {
-                    if (rpcEx.StatusCode.Equals(StatusCode.Cancelled) || _disposed)
-                    {
-                        return;
-                    }
-                }
-                if (ex is InvalidOperationException)
-                {
-                    if (_disposed)
-                    {
-                        //Do nothing, this is an expected exception when we cancel the connection
-                        
-                        return;
-                    }
-                }
+//                if (ex is RpcException rpcEx)
+//                {
+//                    if (rpcEx.StatusCode.Equals(StatusCode.Cancelled) || _disposed)
+//                    {
+//                        return;
+//                    }
+//                }
+//                if (ex is InvalidOperationException)
+//                {
+//                    if (_disposed)
+//                    {
+//                        //Do nothing, this is an expected exception when we cancel the connection
+//                        
+//                        return;
+//                    }
+//                }
 
                 _logger.LogCritical(ex, $"Exception Thrown from inside stream listener task");
-                
+                RootContext.Empty.Send(_endpointManager, "connectionfailure");
                 throw ex;
             }
 

@@ -18,9 +18,13 @@ namespace Proto.Client.Tests
         public (string Address, System.Diagnostics.Process Process) DefaultNode => (DefaultNodeAddress, Nodes[DefaultNodeAddress]);
         public (string Address, System.Diagnostics.Process Process) RemoteNode => (RemoteNodeAddress, Nodes[RemoteNodeAddress]);
 
-        public RemoteManager()
+        static RemoteManager()
         {
             Serialization.RegisterFileDescriptor(Proto.Remote.Tests.Messages.ProtosReflection.Descriptor);
+        }
+        public RemoteManager()
+        {
+            
             ProvisionNode("127.0.0.1", 12000, true);
             ProvisionNode("127.0.0.1", 12001, true);
             
