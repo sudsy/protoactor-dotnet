@@ -20,6 +20,7 @@ namespace Proto.Client
         
         
         private PID _clientHostPID;
+        private bool _disposed;
 
 
         static Client()
@@ -29,7 +30,7 @@ namespace Proto.Client
 
         public static async Task<Client> CreateAsync(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
-            
+            _logger.LogDebug("CreateAsync Called");
             var endpointConfig = Tuple.Create(hostname, port);
             if (_endpointConfig != null & !endpointConfig.Equals(_endpointConfig))
             {
@@ -37,16 +38,18 @@ namespace Proto.Client
             }
             if (_clientEndpointManager == null)
             {
+                _logger.LogDebug("No endpoint manager available - creating new one");
                 var clientEndpointManager =
                     RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)), "clientMarshaller");
-                await RootContext.Empty.RequestAsync<int>(clientEndpointManager, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs));
+                await RootContext.Empty.RequestAsync<int>(clientEndpointManager, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
                 _clientEndpointManager = clientEndpointManager;
                 _endpointConfig = endpointConfig;
                 return new Client();    
             }
 
+            _logger.LogDebug($"Existing endpoint manager found {_clientEndpointManager} reusing it");
             await RootContext.Empty.RequestAsync<int>(_clientEndpointManager, new AcquireClientEndpointReference(),
-                TimeSpan.FromMilliseconds(connectionTimeoutMs));
+                TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
             return new Client();  
             
             
@@ -62,16 +65,19 @@ namespace Proto.Client
  
         public Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
+            checkIfDisposed();
             return Remote.Remote.SpawnNamedAsync(address, name, kind, timeout);
         }
 
         public Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout)
         {
+            checkIfDisposed();
             return Remote.Remote.SpawnAsync(address, kind, timeout);
         }
 
         public async Task<PID> GetClientHostPID()
         {
+            checkIfDisposed();
             if (_clientHostPID != null)
             {
                 return _clientHostPID;
@@ -82,8 +88,11 @@ namespace Proto.Client
 
         }
 
+       
+
         public async Task<ActorPidResponse> SpawnOnClientHostAsync(string name, string kind, TimeSpan timeout)
         {
+            checkIfDisposed();
             var hostPID = await GetClientHostPID();
             return await SpawnNamedAsync(hostPID.Address, name, kind, timeout);
 
@@ -91,6 +100,7 @@ namespace Proto.Client
 
         public async Task<ActorPidResponse> SpawnOnClientHostAsync(string kind, TimeSpan timeout)
         {
+            checkIfDisposed();
             var hostPID = await GetClientHostPID();
             return await SpawnAsync(hostPID.Address, kind, timeout);
         }
@@ -98,9 +108,18 @@ namespace Proto.Client
      
         public void Dispose()
         {
-
-            RootContext.Empty.Send(_clientEndpointManager, new ReleaseClientEndpointReference());
+            if (!_disposed)
+            {
+                RootContext.Empty.Send(_clientEndpointManager, new ReleaseClientEndpointReference());
+                _disposed = true;
+            }
             
+            
+        }
+        
+        private void checkIfDisposed()
+        {
+            if (_disposed) throw new InvalidOperationException("Client is disposed");
         }
         
         

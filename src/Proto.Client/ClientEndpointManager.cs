@@ -55,6 +55,7 @@ namespace Proto.Client
                     
                     break;
                 case AcquireClientEndpointReference _:
+                    _logger.LogDebug($"Acquiring EndpointReference - channel state is {_channel?.State} - reference count prior to grant is {_endpointReferenceCount}");
                     if (_clientEndpointReader == null || _channel.State != ChannelState.Ready)
                     {
                         connectToServer(context.Self);
@@ -71,6 +72,7 @@ namespace Proto.Client
                     if (_endpointReferenceCount <= 0)
                     {
                         disposeConnection();
+                        _endpointReferenceCount = 0; //Just to be sure it's never less than zero
                     }
 
                     break;
@@ -98,9 +100,11 @@ namespace Proto.Client
             var clientEndpointReader = new ClientEndpointReader(context.Self, _clientStreams.ResponseStream, _connectionTimeoutMs);
             if (!_hostPIDSet)
             {
+                _logger.LogDebug("Host PID not set, waiting until hostpid received before returning");
                 var hostPid = await clientEndpointReader.GetClientHostPID();
                 ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
                 _hostPIDSet = true;
+                _logger.LogDebug($"Host PID now set to {ProcessRegistry.Instance.Address}");
             }
 
             _clientEndpointReader = clientEndpointReader;
@@ -109,6 +113,7 @@ namespace Proto.Client
                     new ClientEndpointWriter(_clientStreams.RequestStream)));
             if (_hostPIDSet)
             {
+                _logger.LogDebug("Host PID already set, checking for update");
                 context.Spawn(Props.FromFunc(async ctx =>
                 {
                     switch (ctx.Message)
@@ -116,8 +121,20 @@ namespace Proto.Client
                         case Started _:
                             try
                             {
+                                var currentAddress = ProcessRegistry.Instance.Address;
                                 var hostPid = await _clientEndpointReader.GetClientHostPID();
-                                ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
+                                var newAddress = "client://" + hostPid.Address + "/" + hostPid.Id;
+                                if (newAddress == currentAddress)
+                                {
+                                    _logger.LogDebug("Host PID is the same, no update required");
+                                }
+                                else
+                                {
+                                    _logger.LogDebug($"host PID has changed to {newAddress}");
+                                    ProcessRegistry.Instance.Address = newAddress;
+                                }
+                                
+                                
                             }
                             catch
                             {
