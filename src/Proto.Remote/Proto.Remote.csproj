@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
-    <Version>0.2.58-proto-client</Version>
+    <Version>0.2.59-proto-client</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
@@ -23,6 +23,7 @@
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.5.1" />
     <PackageReference Include="Grpc" Version="1.10.0" />
+    <PackageReference Include="Polly" Version="7.1.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />

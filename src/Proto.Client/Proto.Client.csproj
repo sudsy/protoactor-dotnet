@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0</TargetFrameworks>
-        <Version>0.2.58-proto-client</Version>
+        <Version>0.2.59-proto-client</Version>
         <RootNamespace>Proto</RootNamespace>
     </PropertyGroup>
 
@@ -16,7 +16,6 @@
       <PackageReference Include="Grpc.Tools" Version="1.17.0" />
       <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.0.0" />
-      <PackageReference Include="Polly" Version="7.0.3" />
     </ItemGroup>
 
     

@@ -224,7 +224,19 @@ namespace Proto.Client.Tests
         }
         //TODO Write a test to make sure we can watch actors through the client connection
 
-
+//        [Fact, DisplayTestMethodName]
+//        public async void CanHandleUnknownHosts()
+//        {
+//            using (var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
+//            {
+//                var remoteActorName = Guid.NewGuid().ToString();
+//               
+//                var testPID = new PID("127.0.0.1:1234", "$1");
+//                RootContext.Empty.Send(testPID, new Ping {Message = "Hello"});
+//                await Task.Delay(TimeSpan.FromSeconds(240));
+//            }
+//
+//        }
 
 
     }
