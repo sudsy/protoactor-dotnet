@@ -42,6 +42,10 @@ namespace Proto.Client
         {
             switch (context.Message)
             {
+                case Stopping _:
+                    _logger.LogDebug($"Sending end of stream signal to server");
+                    await _clientStreams.RequestStream.CompleteAsync();
+                    break;
                 case Started _:
                     _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
                     _client = new ClientRemoting.ClientRemotingClient(_channel);

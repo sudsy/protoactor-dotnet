@@ -50,7 +50,11 @@ namespace Proto.Client
                         return;
                     }
 
-                    await _responseStream.MoveNext(new CancellationToken());
+                    if (!await _responseStream.MoveNext(new CancellationToken()))
+                    {
+                        //This is when we are at the end of the stream - usually means we are stopping
+                        return;
+                    }
                     _logger.LogDebug("Received Message Batch");
                     var messageBatch = _responseStream.Current;
                     foreach (var envelope in messageBatch.Envelopes)
