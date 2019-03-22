@@ -15,16 +15,14 @@ namespace Proto.Client
         private static readonly string _clientId = Guid.NewGuid().ToString();
         private Channel _channel;
         private ClientRemoting.ClientRemotingClient _client;
-        private string _hostName;
-        private int _port;
-        private RemoteConfig _config;
-        private int _connectionTimeoutMs;
+        private readonly string _hostName;
+        private readonly int _port;
+        private readonly RemoteConfig _config;
+        private readonly int _connectionTimeoutMs;
         private AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
-        private PID _endpointWriter;
         private PID _endpointReader;
-        private Behavior _behaviour;
+        private readonly Behavior _behaviour;
         
-        private ClientHostPIDResponse _clientHostPidResponse;
 
 
         public ClientConnectionManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
@@ -33,10 +31,10 @@ namespace Proto.Client
             _port = port;
             _config = config;
             _connectionTimeoutMs = connectionTimeoutMs;
-            
+            _behaviour = new Behavior();
+            _behaviour.Become(Starting);
+           
         }
-
-       
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -46,6 +44,15 @@ namespace Proto.Client
                     _logger.LogDebug($"Sending end of stream signal to server");
                     await _clientStreams.RequestStream.CompleteAsync();
                     break;
+            }
+
+            await _behaviour.ReceiveAsync(context);
+        }
+
+        private async Task Starting(IContext context)
+        {
+            switch (context.Message)
+            {
                 case Started _:
                     _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
                     _client = new ClientRemoting.ClientRemotingClient(_channel);
@@ -57,23 +64,29 @@ namespace Proto.Client
                     _logger.LogDebug("Got client streams");
 
                     
-                    //This will let the parent decide whether to restart the connection or not
-                    var escalateFailureStrategy = new OneForOneStrategy(((pid, reason) => SupervisorDirective.Escalate), 0,
-                        TimeSpan.MinValue);
-
                     _endpointReader =
                         context.SpawnPrefix(Props.FromProducer(() =>
                                 new ClientEndpointReader(_clientStreams.ResponseStream))
-                            .WithChildSupervisorStrategy(escalateFailureStrategy), "reader");
+                            , "reader");
                     
-                    //It's better to await the clientHostPID Response here makes everything much simpler - that way we are sure that everything is right before trying to deliver
-                    _clientHostPidResponse =
-                        await context.RequestAsync<ClientHostPIDResponse>(_endpointReader, new ClientHostPIDRequest(), TimeSpan.FromMilliseconds(_connectionTimeoutMs));
-                    
+                      
                     break;
-                case ClientHostPIDRequest _:
-                    context.Respond(_clientHostPidResponse);
+               
+                case ClientHostPIDResponse clientHostPidResponse:
+                    _behaviour.Become(Started);
+                    context.Forward(context.Parent);
                     break;
+                case RemoteDeliver rd:
+                    _logger.LogWarning("Unexpected Remote deliver message while starting");
+                    break;
+            }
+        }
+
+        public async Task Started(IContext context)
+        {
+            switch (context.Message)
+            {
+                
                 
                 case RemoteDeliver rd:
                     var batch = rd.getMessageBatch();
@@ -98,7 +111,8 @@ namespace Proto.Client
                     
                     _logger.LogDebug($"Sent RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
                     break;
-                    break;
+               
+               
             }
 
             

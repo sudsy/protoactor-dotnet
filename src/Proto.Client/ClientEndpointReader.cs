@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -34,22 +35,14 @@ namespace Proto.Client
                 case Started _:
                     context.Send(context.Self, "listen");
                     break;
-                case ClientHostPIDRequest _:
-                    if (_clientHostPIDResponse != null)
-                    {
-                        context.Respond(_clientHostPIDResponse);
-                    }
-                    else
-                    {
-                        _pidRequester = context.Sender;
-                    }
-                    break;
+                
                 case String str:
                     if (str != "listen")
                     {
                         return;
                     }
 
+                    
                     if (!await _responseStream.MoveNext(new CancellationToken()))
                     {
                         //This is when we are at the end of the stream - usually means we are stopping
@@ -67,14 +60,9 @@ namespace Proto.Client
 
                         if (message is ClientHostPIDResponse)
                         {
-                            if (_pidRequester != null)
-                            {
-                                context.Send(_pidRequester, message);
-                            }
-                            else
-                            {
-                                _clientHostPIDResponse = message; 
-                            }
+                           
+                            context.Send(context.Parent, message);
+                            
                            
                             context.Send(context.Self, "listen");
                             return;

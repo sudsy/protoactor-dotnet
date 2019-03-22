@@ -41,6 +41,7 @@ namespace Proto.Client
                 _logger.LogDebug("No endpoint manager available - creating new one");
                 var clientEndpointManager =
                     RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)), "clientMarshaller");
+                
                 await RootContext.Empty.RequestAsync<int>(clientEndpointManager, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
                 _clientEndpointManager = clientEndpointManager;
                 _endpointConfig = endpointConfig;

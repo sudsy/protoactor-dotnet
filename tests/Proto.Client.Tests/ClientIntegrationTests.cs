@@ -127,7 +127,7 @@ namespace Proto.Client.Tests
                     "EchoActor", TimeSpan.FromSeconds(5));
                 var remoteActor = remoteActorResp.Pid;
                 var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
-                    TimeSpan.FromMilliseconds(5000));
+                    TimeSpan.FromMilliseconds(50000));
                 Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
             }
 
