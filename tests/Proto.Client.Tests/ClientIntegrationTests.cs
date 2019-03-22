@@ -138,7 +138,7 @@ namespace Proto.Client.Tests
         {
             using (var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig()))
             {
-                var pid = await client.GetClientHostPID();
+                var pid = await client.GetClientHostPID(TimeSpan.FromSeconds(5));
                 Assert.Equal("127.0.0.1:12000", pid.Address);
             }
 

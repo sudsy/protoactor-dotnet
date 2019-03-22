@@ -12,7 +12,7 @@ namespace Proto.Client
     public class ClientHostEndpointWriter :IActor
     {
         private readonly IServerStreamWriter<MessageBatch> _responseStream;
-        private static readonly ILogger Logger = Log.CreateLogger<ClientEndpointWriter>();
+        private static readonly ILogger Logger = Log.CreateLogger<ClientHostEndpointWriter>();
 
         public ClientHostEndpointWriter(IServerStreamWriter<MessageBatch> responseStream)
         {
@@ -29,7 +29,7 @@ namespace Proto.Client
                     //Send a connection started message to be delivered over this response stream
                     
                     
-                    context.Send(context.Self, new  RemoteDeliver(null, new ClientConnectionStarted(), context.Self, context.Self, Serialization.DefaultSerializerId));
+                    context.Send(context.Self, new  RemoteDeliver(null, new ClientHostPIDResponse(){HostProcess = context.Self}, context.Self, context.Self, Serialization.DefaultSerializerId));
                     break;
 
                 case ClientMessageBatch cmb:

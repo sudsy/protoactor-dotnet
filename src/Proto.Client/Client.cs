@@ -75,14 +75,14 @@ namespace Proto.Client
             return Remote.Remote.SpawnAsync(address, kind, timeout);
         }
 
-        public async Task<PID> GetClientHostPID()
+        public async Task<PID> GetClientHostPID(TimeSpan timeout)
         {
             checkIfDisposed();
             if (_clientHostPID != null)
             {
                 return _clientHostPID;
             }
-            _clientHostPID = await RootContext.Empty.RequestAsync<PID>(_clientEndpointManager, "getclienthostpid");
+            _clientHostPID = await RootContext.Empty.RequestAsync<PID>(_clientEndpointManager, "getclienthostpid", timeout);
             return _clientHostPID;
 
 
@@ -93,7 +93,7 @@ namespace Proto.Client
         public async Task<ActorPidResponse> SpawnOnClientHostAsync(string name, string kind, TimeSpan timeout)
         {
             checkIfDisposed();
-            var hostPID = await GetClientHostPID();
+            var hostPID = await GetClientHostPID(timeout);
             return await SpawnNamedAsync(hostPID.Address, name, kind, timeout);
 
         }
@@ -101,7 +101,7 @@ namespace Proto.Client
         public async Task<ActorPidResponse> SpawnOnClientHostAsync(string kind, TimeSpan timeout)
         {
             checkIfDisposed();
-            var hostPID = await GetClientHostPID();
+            var hostPID = await GetClientHostPID(timeout);
             return await SpawnAsync(hostPID.Address, kind, timeout);
         }
         

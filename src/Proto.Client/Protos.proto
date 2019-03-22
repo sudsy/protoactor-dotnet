@@ -21,7 +21,12 @@ message ProxyPidResponse {
     actor.PID proxyPID = 2;
 }
 
-message ClientConnectionStarted {
+message ClientHostPIDRequest {
+    
+}
+
+message ClientHostPIDResponse {
+    actor.PID hostProcess = 1;
 }
 
 

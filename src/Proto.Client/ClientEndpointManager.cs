@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Retry;
 using Proto.Remote;
 
 namespace Proto.Client
@@ -10,20 +12,15 @@ namespace Proto.Client
     {
         private static readonly ILogger _logger = Log.CreateLogger<ClientEndpointManager>();
         
-        private readonly string _clientId = Guid.NewGuid().ToString();
-        private Channel _channel;
-        private ClientRemoting.ClientRemotingClient _client;
-        private ClientEndpointReader _clientEndpointReader;
-        private AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
-        
         private int _endpointReferenceCount = 0;
         private string _hostName;
         private int _port;
         private RemoteConfig _config;
         private int _connectionTimeoutMs;
         
-        private PID _endpointWriter;
-        
+        private PID _clientConnectionManager;
+        private ClientHostPIDResponse _clientHostPidResponse;
+
 
         public ClientEndpointManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
@@ -31,6 +28,8 @@ namespace Proto.Client
             _port = port;
             _config = config;
             _connectionTimeoutMs = connectionTimeoutMs;
+            
+            
         }
         
         public async Task ReceiveAsync(IContext context)
@@ -38,31 +37,32 @@ namespace Proto.Client
             switch (context.Message)
             {
                 case String str:
-                    switch (str)
+                    if (str == "getclienthostpid")
                     {
-                        case "getclienthostpid":
-                            context.Respond(await _clientEndpointReader.GetClientHostPID());
-                            break;
-                        case "connectionfailure":
-                            _logger.LogInformation("Connection Failed Retrying connection");
-                           
-//                            disposeConnection();
-                            connectToServer(context.Self);
-                            await connectReaderAndWriter(context);
-
-                            break;
+                        context.Respond(_clientHostPidResponse.HostProcess);
                     }
-                    
                     break;
                 case AcquireClientEndpointReference _:
-                    _logger.LogDebug($"Acquiring EndpointReference - channel state is {_channel?.State} - reference count prior to grant is {_endpointReferenceCount}");
-                    if (_clientEndpointReader == null || _channel.State != ChannelState.Ready)
-                    {
-                        connectToServer(context.Self);
+                    _logger.LogDebug($"Acquiring EndpointReference  - reference count prior to grant is {_endpointReferenceCount}");
+                       
+                    //Standard Supervisor strategy should work, we want a restart in case of failure - we will stop it when finished with it
 
-                        await connectReaderAndWriter(context);
+                    if (_endpointReferenceCount <= 0)
+                    {
+                        //TODO: Maybe we need exponential backoff here
+                        _clientConnectionManager = context.SpawnPrefix(Props.FromProducer(() =>
+                                new ClientConnectionManager(_hostName, _port, _config, _connectionTimeoutMs)),
+                            "connmgr");
+
+                        //Can't hand out a reference until the Process Address is set otherwise sender PIDs will all be wrong
+                        _clientHostPidResponse = await context.RequestAsync<ClientHostPIDResponse>(_clientConnectionManager,
+                            new ClientHostPIDRequest());
+                        
+                        ProcessRegistry.Instance.Address = "client://" + _clientHostPidResponse.HostProcess.Address + "/" +
+                                                           _clientHostPidResponse.HostProcess.Id;
                     }
                     
+                   
                     _endpointReferenceCount++;
                     context.Respond(_endpointReferenceCount);
                     break;
@@ -71,85 +71,30 @@ namespace Proto.Client
                     _endpointReferenceCount--;
                     if (_endpointReferenceCount <= 0)
                     {
-                        disposeConnection();
+                        _clientConnectionManager.Stop();
+                        _clientConnectionManager = null;
                         _endpointReferenceCount = 0; //Just to be sure it's never less than zero
                     }
 
                     break;
                 
                 case RemoteDeliver rd:
-                    if (_channel.State != ChannelState.Ready)
-                    {
-                        
-                        _logger.LogInformation("Connection Failed Trying to send Retrying connection");
-                           
-                        connectToServer(context.Self);
-                        await connectReaderAndWriter(context);
-                    }
+                    
                     _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer");
-                    context.Forward(_endpointWriter);
+                    context.Forward(_clientConnectionManager);
                     break;
                 
             }
 
             return;
         }
+        
+      
 
-        private async Task connectReaderAndWriter(IContext context)
-        {
-            var clientEndpointReader = new ClientEndpointReader(context.Self, _clientStreams.ResponseStream, _connectionTimeoutMs);
-            
-            _logger.LogDebug("Waiting until hostpid received before returning");
-            var hostPid = await clientEndpointReader.GetClientHostPID();
-            ProcessRegistry.Instance.Address = "client://" + hostPid.Address + "/" + hostPid.Id;
-            
-            _logger.LogDebug($"Host PID now set to {ProcessRegistry.Instance.Address}");
-            
-            _clientEndpointReader = clientEndpointReader;
-            _endpointWriter =
-                RootContext.Empty.Spawn(Props.FromProducer(() =>
-                    new ClientEndpointWriter(_clientStreams.RequestStream)));
-           
-           
-        }
-
-        private void disposeConnection()
-        {
-            _endpointWriter.PoisonAsync().Wait();
-            //Wait for the end of stream for the reader
-
-            _clientEndpointReader.Dispose();
-            _clientEndpointReader = null;
-            _clientStreams?.Dispose();
-        }
-
-        private void connectToServer(PID endpointManager)
-        {
-            if (_channel == null || _channel.State != ChannelState.Ready)
-            {
-                _logger.LogTrace("Creating channel for connection");
-                //THis hangs around even when there are no client rpcs
-
-                _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
-                _client = new ClientRemoting.ClientRemotingClient(_channel);
-            }
-
-            var connectionHeaders = new Metadata() {{"clientid", _clientId}};
-
-            _clientStreams = _client.ConnectClient(connectionHeaders, null);
+   
 
 
-            _logger.LogDebug("Got client streams");
-            
-        }
 
-//        private async Task retryConnection(PID endpointManager, int retryInterval)
-//        {
-//            while (_channel.State != ChannelState.Ready)
-//            {
-//                disposeConnection();
-//                await connectToServer(endpointManager, retryInterval);
-//            }
-//        }
+
     }
 }

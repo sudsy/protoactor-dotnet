@@ -29,12 +29,13 @@ namespace Proto.Client {
             "bnRFbmRwb2ludFJlZmVyZW5jZSIgCh5SZWxlYXNlQ2xpZW50RW5kcG9pbnRS",
             "ZWZlcmVuY2UiMAoPUHJveHlQaWRSZXF1ZXN0Eh0KCWNsaWVudFBJRBgBIAEo",
             "CzIKLmFjdG9yLlBJRCIwChBQcm94eVBpZFJlc3BvbnNlEhwKCHByb3h5UElE",
-            "GAIgASgLMgouYWN0b3IuUElEIhkKF0NsaWVudENvbm5lY3Rpb25TdGFydGVk",
-            "IkoKEkNsaWVudE1lc3NhZ2VCYXRjaBIPCgdhZGRyZXNzGAEgASgJEiMKBWJh",
-            "dGNoGAIgASgLMhQucmVtb3RlLk1lc3NhZ2VCYXRjaDJZCg5DbGllbnRSZW1v",
-            "dGluZxJHCg1Db25uZWN0Q2xpZW50EhouY2xpZW50LkNsaWVudE1lc3NhZ2VC",
-            "YXRjaBoULnJlbW90ZS5NZXNzYWdlQmF0Y2giACgBMAFCD6oCDFByb3RvLkNs",
-            "aWVudGIGcHJvdG8z"));
+            "GAIgASgLMgouYWN0b3IuUElEIhYKFENsaWVudEhvc3RQSURSZXF1ZXN0IjgK",
+            "FUNsaWVudEhvc3RQSURSZXNwb25zZRIfCgtob3N0UHJvY2VzcxgBIAEoCzIK",
+            "LmFjdG9yLlBJRCJKChJDbGllbnRNZXNzYWdlQmF0Y2gSDwoHYWRkcmVzcxgB",
+            "IAEoCRIjCgViYXRjaBgCIAEoCzIULnJlbW90ZS5NZXNzYWdlQmF0Y2gyWQoO",
+            "Q2xpZW50UmVtb3RpbmcSRwoNQ29ubmVjdENsaWVudBIaLmNsaWVudC5DbGll",
+            "bnRNZXNzYWdlQmF0Y2gaFC5yZW1vdGUuTWVzc2FnZUJhdGNoIgAoATABQg+q",
+            "AgxQcm90by5DbGllbnRiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, global::Proto.Remote.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -42,7 +43,8 @@ namespace Proto.Client {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ReleaseClientEndpointReference), global::Proto.Client.ReleaseClientEndpointReference.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ProxyPidRequest), global::Proto.Client.ProxyPidRequest.Parser, new[]{ "ClientPID" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ProxyPidResponse), global::Proto.Client.ProxyPidResponse.Parser, new[]{ "ProxyPID" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientConnectionStarted), global::Proto.Client.ClientConnectionStarted.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientHostPIDRequest), global::Proto.Client.ClientHostPIDRequest.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientHostPIDResponse), global::Proto.Client.ClientHostPIDResponse.Parser, new[]{ "HostProcess" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Client.ClientMessageBatch), global::Proto.Client.ClientMessageBatch.Parser, new[]{ "Address", "Batch" }, null, null, null)
           }));
     }
@@ -522,11 +524,11 @@ namespace Proto.Client {
 
   }
 
-  public sealed partial class ClientConnectionStarted : pb::IMessage<ClientConnectionStarted> {
-    private static readonly pb::MessageParser<ClientConnectionStarted> _parser = new pb::MessageParser<ClientConnectionStarted>(() => new ClientConnectionStarted());
+  public sealed partial class ClientHostPIDRequest : pb::IMessage<ClientHostPIDRequest> {
+    private static readonly pb::MessageParser<ClientHostPIDRequest> _parser = new pb::MessageParser<ClientHostPIDRequest>(() => new ClientHostPIDRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<ClientConnectionStarted> Parser { get { return _parser; } }
+    public static pb::MessageParser<ClientHostPIDRequest> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -539,29 +541,29 @@ namespace Proto.Client {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ClientConnectionStarted() {
+    public ClientHostPIDRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ClientConnectionStarted(ClientConnectionStarted other) : this() {
+    public ClientHostPIDRequest(ClientHostPIDRequest other) : this() {
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ClientConnectionStarted Clone() {
-      return new ClientConnectionStarted(this);
+    public ClientHostPIDRequest Clone() {
+      return new ClientHostPIDRequest(this);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as ClientConnectionStarted);
+      return Equals(other as ClientHostPIDRequest);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(ClientConnectionStarted other) {
+    public bool Equals(ClientHostPIDRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -602,7 +604,7 @@ namespace Proto.Client {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(ClientConnectionStarted other) {
+    public void MergeFrom(ClientHostPIDRequest other) {
       if (other == null) {
         return;
       }
@@ -623,6 +625,141 @@ namespace Proto.Client {
 
   }
 
+  public sealed partial class ClientHostPIDResponse : pb::IMessage<ClientHostPIDResponse> {
+    private static readonly pb::MessageParser<ClientHostPIDResponse> _parser = new pb::MessageParser<ClientHostPIDResponse>(() => new ClientHostPIDResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ClientHostPIDResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ClientHostPIDResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ClientHostPIDResponse(ClientHostPIDResponse other) : this() {
+      hostProcess_ = other.hostProcess_ != null ? other.hostProcess_.Clone() : null;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ClientHostPIDResponse Clone() {
+      return new ClientHostPIDResponse(this);
+    }
+
+    /// <summary>Field number for the "hostProcess" field.</summary>
+    public const int HostProcessFieldNumber = 1;
+    private global::Proto.PID hostProcess_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Proto.PID HostProcess {
+      get { return hostProcess_; }
+      set {
+        hostProcess_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ClientHostPIDResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ClientHostPIDResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(HostProcess, other.HostProcess)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (hostProcess_ != null) hash ^= HostProcess.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (hostProcess_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(HostProcess);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (hostProcess_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(HostProcess);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ClientHostPIDResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.hostProcess_ != null) {
+        if (hostProcess_ == null) {
+          hostProcess_ = new global::Proto.PID();
+        }
+        HostProcess.MergeFrom(other.HostProcess);
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            if (hostProcess_ == null) {
+              hostProcess_ = new global::Proto.PID();
+            }
+            input.ReadMessage(hostProcess_);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class ClientMessageBatch : pb::IMessage<ClientMessageBatch> {
     private static readonly pb::MessageParser<ClientMessageBatch> _parser = new pb::MessageParser<ClientMessageBatch>(() => new ClientMessageBatch());
     private pb::UnknownFieldSet _unknownFields;
@@ -631,7 +768,7 @@ namespace Proto.Client {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Proto.Client.ProtosReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
