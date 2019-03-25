@@ -45,7 +45,7 @@ namespace Proto.Client
                     
                     if (!await _responseStream.MoveNext(new CancellationToken()))
                     {
-                        //This is when we are at the end of the stream - usually means we are stopping
+                        //This is when we are at the end of the stream - Means we received the end of stream signal from the server
                         return;
                     }
                     _logger.LogDebug("Received Message Batch");
