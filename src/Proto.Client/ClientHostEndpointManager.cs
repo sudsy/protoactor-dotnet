@@ -60,7 +60,7 @@ namespace Proto.Client
                         var message = Serialization.Deserialize(clientMessageBatch.Batch.TypeNames[envelope.TypeId],
                             envelope.MessageData, envelope.SerializerId);
 
-                        Logger.LogDebug($"Batch Message {message}");
+                        Logger.LogDebug($"Batch Message {message.GetType()}");
 
                         var target = new PID(targetAddress, clientMessageBatch.Batch.TargetNames[envelope.Target]);
 
@@ -78,7 +78,7 @@ namespace Proto.Client
 
                         var forwardingEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
 
-                        Logger.LogDebug($"Sending message {message} to target {target} from {envelope.Sender}");
+                        Logger.LogDebug($"Sending message {message.GetType()} to target {target} from {envelope.Sender}");
                         
                         RootContext.Empty.Send(target, forwardingEnvelope);
 

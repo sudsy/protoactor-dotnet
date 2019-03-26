@@ -58,11 +58,11 @@ namespace Proto.Remote
 
             EndpointManager.Start();
             _endpointReader = new EndpointReader();
-            _server = new Server
+            _server = new Server(config.ChannelOptions)
             {
                 Services = { Remoting.BindService(_endpointReader) },
-                Ports = { new ServerPort(hostname, port, config.ServerCredentials) },
-                
+                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
+               
             };
             if (config.AdditionalServices != null)
             {

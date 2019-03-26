@@ -20,7 +20,7 @@ namespace Proto.Client
         }
         public async Task ReceiveAsync(IContext context)
         {
-            Logger.LogDebug($"ClientHostEndpointwriter received {context.Message}");
+            Logger.LogDebug($"ClientHostEndpointwriter received {context.Message.GetType()}");
             
             switch (context.Message)
             {
@@ -33,18 +33,18 @@ namespace Proto.Client
                     break;
 
                 case ClientMessageBatch cmb:
-                    await WriteWithTimeout(cmb.Batch, TimeSpan.FromSeconds(30));
+                    await WriteWithTimeout(cmb.Batch, TimeSpan.FromSeconds(1));
                     break;
 
                 case RemoteDeliver rd:
                     
-                    Logger.LogDebug($"Sending RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
+                    Logger.LogDebug($"Sending RemoteDeliver message {rd.Message.GetType()} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
 
                     var batch = rd.getMessageBatch();
            
-                    await WriteWithTimeout(batch, TimeSpan.FromSeconds(30));
+                    await WriteWithTimeout(batch, TimeSpan.FromSeconds(1));
             
-                    Logger.LogDebug($"Sent RemoteDeliver message {rd.Message} to {rd.Target.Id}");
+                    Logger.LogDebug($"Sent RemoteDeliver message {rd.Message.GetType()} to {rd.Target.Id}");
                     
                     break;
             }
@@ -58,15 +58,9 @@ namespace Proto.Client
         {
             var timeoutPolicy = Policy.TimeoutAsync(timeout, TimeoutStrategy.Pessimistic);
 
-            try
-            {
-                await timeoutPolicy.ExecuteAsync(() => _responseStream.WriteAsync(batch));
-            }
-            catch
-            {
-                Logger.LogError($"DeadLetter - could not send message batch {batch} to client");
-            }
-            
+           
+            await timeoutPolicy.ExecuteAsync(() => _responseStream.WriteAsync(batch));
+           
             
         }
     }

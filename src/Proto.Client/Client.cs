@@ -69,7 +69,8 @@ namespace Proto.Client
             checkIfDisposed();
             return Remote.Remote.SpawnNamedAsync(address, name, kind, timeout);
         }
-
+        
+     
         public Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout)
         {
             checkIfDisposed();

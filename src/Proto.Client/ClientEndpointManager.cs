@@ -38,6 +38,7 @@ namespace Proto.Client
 
         public Task ReceiveAsync(IContext context)
         {
+            
             return _behaviour.ReceiveAsync(context);
         }
 
@@ -51,7 +52,11 @@ namespace Proto.Client
                     //Standard Supervisor strategy should work, we want a restart in case of failure - we will stop it when finished with it
 
                     
-                    var escalateFailureStrategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1,null);
+                    var escalateFailureStrategy = new OneForOneStrategy((pid, reason) =>
+                    {
+                        _behaviour.Become(WaitingForConnection);
+                        return SupervisorDirective.Escalate;
+                    }, 1,null);
 
                     //TODO: Maybe we need exponential backoff here
                     _clientConnectionManager = context.SpawnPrefix(Props.FromProducer(() =>
@@ -91,6 +96,11 @@ namespace Proto.Client
                     
                     _behaviour.Become(ConnectionStarted);
                     break;
+                
+                case ReleaseClientEndpointReference _:
+                    reduceReferenceCount();
+
+                    break;
             }
 
             return Actor.Done;
@@ -116,14 +126,7 @@ namespace Proto.Client
                     break;
                 
                 case ReleaseClientEndpointReference _:
-                    _endpointReferenceCount--;
-                    if (_endpointReferenceCount <= 0)
-                    {
-                        _clientConnectionManager.Stop();
-                        _clientConnectionManager = null;
-                        _endpointReferenceCount = 0; //Just to be sure it's never less than zero
-                        _behaviour.Become(NoConnection);
-                    }
+                    reduceReferenceCount();
 
                     break;
                 
@@ -137,13 +140,18 @@ namespace Proto.Client
 
             return;
         }
-        
-      
 
-   
-
-
-
-
+        private void reduceReferenceCount()
+        {
+            _endpointReferenceCount--;
+            _logger.LogDebug($"Releasing EndpointReference  - reference count after release is {_endpointReferenceCount}");
+            if (_endpointReferenceCount <= 0)
+            {
+                _clientConnectionManager.Stop();
+                _clientConnectionManager = null;
+                _endpointReferenceCount = 0; //Just to be sure it's never less than zero
+                _behaviour.Become(NoConnection);
+            }
+        }
     }
 }

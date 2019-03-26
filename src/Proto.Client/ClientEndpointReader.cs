@@ -41,13 +41,16 @@ namespace Proto.Client
                     {
                         return;
                     }
-
+                   
+                    //We use a recursive message here to allow errors in this method to be handled by the supervision hierarchy and still receive system messages
                     
+                    _logger.LogDebug("Awaiting Message Batch");
                     if (!await _responseStream.MoveNext(new CancellationToken()))
                     {
                         //This is when we are at the end of the stream - Means we received the end of stream signal from the server
                         return;
                     }
+
                     _logger.LogDebug("Received Message Batch");
                     var messageBatch = _responseStream.Current;
                     foreach (var envelope in messageBatch.Envelopes)
@@ -60,10 +63,10 @@ namespace Proto.Client
 
                         if (message is ClientHostPIDResponse)
                         {
-                           
+
                             context.Send(context.Parent, message);
-                            
-                           
+
+
                             context.Send(context.Self, "listen");
                             return;
 
@@ -71,15 +74,15 @@ namespace Proto.Client
 
 
                         _logger.LogDebug(
-                            $"Opened Envelope from {envelope.Sender} for {target} containing message {message}");
+                            $"Opened Envelope from {envelope.Sender} for {target} containing message {message.GetType()}");
                         //todo: Need to convert the headers here
                         var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, null);
 
                         context.Send(target, localEnvelope);
                         context.Send(context.Self, "listen");
                     }
-
-                        
+                    
+                   
                     
                     break;
             }

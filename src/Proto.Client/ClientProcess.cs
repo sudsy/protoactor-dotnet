@@ -29,7 +29,7 @@ namespace Proto.Client
             
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
             
-            Logger.LogDebug($"Sending Client Message {message} to {_clientTargetPID}");
+            Logger.LogDebug($"Sending Client Message {message.GetType()} to {_clientTargetPID}");
             
             var env = new RemoteDeliver(header, message, _clientTargetPID, sender, Serialization.DefaultSerializerId);
 

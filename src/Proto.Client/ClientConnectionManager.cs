@@ -54,22 +54,29 @@ namespace Proto.Client
             switch (context.Message)
             {
                 case Started _:
+                    _logger.LogDebug("Creating Channel");
                     _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
+                    _logger.LogDebug("Creating Remoting Client");
                     _client = new ClientRemoting.ClientRemotingClient(_channel);
                     var connectionHeaders = new Metadata() {{"clientid", _clientId}};
-
+                    _logger.LogDebug("Connectiing Streams");
                     _clientStreams = _client.ConnectClient(connectionHeaders, null);
 
 
-                    _logger.LogDebug("Got client streams");
+                    _logger.LogDebug("Got client streams - creating endpoint reader");
 
+                    Task.Run(() =>
+                    {
+                        //Start this in a new process so the loop is not affected by parent processes shuttting down (eg. Orleans)
+                        _endpointReader =
+                            context.SpawnPrefix(Props.FromProducer(() =>
+                                    new ClientEndpointReader(_clientStreams.ResponseStream))
+                                , "reader");
+                    });
                     
-                    _endpointReader =
-                        context.SpawnPrefix(Props.FromProducer(() =>
-                                new ClientEndpointReader(_clientStreams.ResponseStream))
-                            , "reader");
+                   
                     
-                      
+                    _logger.LogDebug("Endpoint reader created");
                     break;
                
                 case ClientHostPIDResponse clientHostPidResponse:
@@ -91,7 +98,7 @@ namespace Proto.Client
                 case RemoteDeliver rd:
                     var batch = rd.getMessageBatch();
             
-                    _logger.LogDebug($"Sending RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
+                    _logger.LogDebug($"Sending RemoteDeliver message {rd.Message.GetType()} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
                 
                     var clientBatch = new ClientMessageBatch()
                     {
@@ -109,7 +116,7 @@ namespace Proto.Client
                     }
                     
                     
-                    _logger.LogDebug($"Sent RemoteDeliver message {rd.Message} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
+                    _logger.LogDebug($"Sent RemoteDeliver message {rd.Message.GetType()} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
                     break;
                
                
