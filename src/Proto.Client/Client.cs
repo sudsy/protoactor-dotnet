@@ -19,13 +19,16 @@ namespace Proto.Client
         private static Tuple<string, int> _endpointConfig;
         
         
+        
         private PID _clientHostPID;
         private bool _disposed;
+        private static bool _connectionFailed;
 
 
         static Client()
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            
         }
 
         public static async Task<Client> CreateAsync(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
@@ -39,10 +42,19 @@ namespace Proto.Client
             if (_clientEndpointManager == null)
             {
                 _logger.LogDebug("No endpoint manager available - creating new one");
+                
+                //Exponential Backoff for client connection
+                var backoffStrategy =
+                    new ExponentialBackoffWithAction(() =>
+                    {
+                        _clientEndpointManager = null;
+                        _connectionFailed = true;
+                    }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromSeconds(30));
                 var clientEndpointManager =
-                    RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)), "clientMarshaller");
+                    RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientMarshaller");
                 
                 await RootContext.Empty.RequestAsync<int>(clientEndpointManager, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
+                _connectionFailed = false;
                 _clientEndpointManager = clientEndpointManager;
                 _endpointConfig = endpointConfig;
                 return new Client();    
@@ -121,13 +133,22 @@ namespace Proto.Client
         
         private void checkIfDisposed()
         {
+            if (_connectionFailed)
+            {
+                throw new ApplicationException("Connection to client host failed after several retries");
+            }
             if (_disposed) throw new InvalidOperationException("Client is disposed");
         }
         
         
         public static void SendMessage(PID target, object envelope, int serializerId)
         {
-           
+
+            if (_connectionFailed)
+            {
+                throw new ApplicationException("Connection to client host failed after several retries");
+            }
+            
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
             
             
@@ -144,5 +165,74 @@ namespace Proto.Client
 
 
    
+    }
+
+    public class ExponentialBackoffWithAction : ISupervisorStrategy
+    {
+        private static readonly ILogger Logger = Log.CreateLogger<ExponentialBackoffWithAction>();
+        private Action _actionOnRestartFail;
+        private TimeSpan _initialBackoff;
+        private DateTime _firstFail = DateTime.MinValue;
+        private readonly Random _random = new Random();
+        private int _maxNrOfRetries;
+        private TimeSpan? _withinTimeSpan;
+
+        public ExponentialBackoffWithAction(Action actionOnRestartFail,  TimeSpan initialBackoff, int maxNrOfRetries, TimeSpan? withinTimeSpan)
+        {
+            _actionOnRestartFail = actionOnRestartFail;
+            _initialBackoff = initialBackoff;
+            _maxNrOfRetries = maxNrOfRetries;
+            _withinTimeSpan = withinTimeSpan;
+
+        }
+
+        public new void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
+            object message)
+        {
+            if (ShouldStop(rs))
+            {
+                Logger.LogWarning($"Stopping {child.ToShortString()} after retries expired Reason { reason}");
+                _actionOnRestartFail();
+                supervisor.StopChildren(supervisor.Children.ToArray());
+            }
+            else
+            {
+                var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
+                var noise = _random.Next(500);
+                var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
+                Task.Delay(duration).ContinueWith(t =>
+                {
+                    Logger.LogWarning($"Restarting {child.ToShortString()} after {duration} Reason {reason}");
+                    supervisor.RestartChildren(reason, child);
+                });
+            }
+        }
+        
+        private long ToNanoseconds(TimeSpan timeSpan)
+        {
+            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
+        }
+
+        private long ToMilliseconds(long nanoseconds)
+        {
+            return nanoseconds / 1000000;
+        }
+        
+        private bool ShouldStop(RestartStatistics rs)
+        {
+            if (_maxNrOfRetries == 0)
+            {
+                return true;
+            }
+            rs.Fail();
+            
+            if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
+            {
+                rs.Reset();
+                return true;
+            }
+            
+            return false;
+        }
     }
 }

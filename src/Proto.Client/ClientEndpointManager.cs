@@ -101,6 +101,10 @@ namespace Proto.Client
                     reduceReferenceCount();
 
                     break;
+                case RemoteDeliver rd:
+                    _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer while waiting for connection");
+                    context.Forward(_clientConnectionManager);
+                    break;
             }
 
             return Actor.Done;

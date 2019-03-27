@@ -69,23 +69,23 @@ namespace Proto
             switch (directive)
             {
                 case SupervisorDirective.Resume:
-                    Logger.LogInformation($"Resuming {child.ToShortString()} Reason {reason}");
+                    Logger.LogWarning($"Resuming {child.ToShortString()} Reason {reason}");
                     supervisor.ResumeChildren(child);
                     break;
                 case SupervisorDirective.Restart:
                     if (ShouldStop(rs))
                     {
-                        Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
+                        Logger.LogWarning($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(supervisor.Children.ToArray());
                     }
                     else
                     {
-                        Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
+                        Logger.LogWarning($"Restarting {child.ToShortString()} Reason {reason}");
                         supervisor.RestartChildren(reason, supervisor.Children.ToArray());
                     }
                     break;
                 case SupervisorDirective.Stop:
-                    Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
+                    Logger.LogWarning($"Stopping {child.ToShortString()} Reason {reason}");
                     supervisor.StopChildren(supervisor.Children.ToArray());
                     break;
                 case SupervisorDirective.Escalate:
@@ -139,17 +139,17 @@ namespace Proto
                 case SupervisorDirective.Restart:
                     if (ShouldStop(rs))
                     {
-                        Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
+                        Logger.LogWarning($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(child);
                     }
                     else
                     {
-                        Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
+                        Logger.LogWarning($"Restarting {child.ToShortString()} Reason {reason}");
                         supervisor.RestartChildren(reason, child);
                     }
                     break;
                 case SupervisorDirective.Stop:
-                    Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
+                    Logger.LogWarning($"Stopping {child.ToShortString()} Reason {reason}");
                     supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:
@@ -180,6 +180,7 @@ namespace Proto
 
     public class ExponentialBackoffStrategy : ISupervisorStrategy
     {
+        private static readonly ILogger Logger = Log.CreateLogger<ExponentialBackoffStrategy>();
         private readonly TimeSpan _backoffWindow;
         private readonly TimeSpan _initialBackoff;
         private readonly Random _random = new Random();
@@ -194,6 +195,7 @@ namespace Proto
         {
             if (rs.NumberOfFailures(_backoffWindow) == 0)
             {
+                
                 rs.Reset();
             }
 
@@ -204,6 +206,7 @@ namespace Proto
             var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
             Task.Delay(duration).ContinueWith(t =>
             {
+                Logger.LogWarning($"Restarting {child.ToShortString()} after {duration} Reason {reason}");
                 supervisor.RestartChildren(reason, child);
             });
         }

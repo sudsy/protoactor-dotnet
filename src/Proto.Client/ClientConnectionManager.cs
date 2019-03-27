@@ -107,7 +107,7 @@ namespace Proto.Client
                     };
                     try
                     {
-                        await WriteWithTimeout(clientBatch, TimeSpan.FromSeconds(10));
+                        await WriteWithTimeout(clientBatch, TimeSpan.FromSeconds(1));
                     }
                     catch (Exception ex)
                     {
@@ -134,9 +134,9 @@ namespace Proto.Client
             {
                 await timeoutPolicy.ExecuteAsync(() => _clientStreams.RequestStream.WriteAsync(batch));
             }
-            catch
+            catch(Exception ex)
             {
-                _logger.LogError($"DeadLetter - could not send client message batch {batch} to server");
+                _logger.LogWarning($"DeadLetter - could not send client message batch {batch} to server", ex);
             }
             
             
