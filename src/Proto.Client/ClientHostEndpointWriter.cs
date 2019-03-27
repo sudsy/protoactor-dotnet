@@ -3,8 +3,6 @@ using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Timeout;
 using Proto.Remote;
 
 namespace Proto.Client
@@ -33,7 +31,8 @@ namespace Proto.Client
                     break;
 
                 case ClientMessageBatch cmb:
-                    await WriteWithTimeout(cmb.Batch, TimeSpan.FromSeconds(1));
+                    
+                    await _responseStream.WriteAsync(cmb.Batch);
                     break;
 
                 case RemoteDeliver rd:
@@ -41,8 +40,8 @@ namespace Proto.Client
                     Logger.LogDebug($"Sending RemoteDeliver message {rd.Message.GetType()} to {rd.Target.Id} address {rd.Target.Address} from {rd.Sender}");
 
                     var batch = rd.getMessageBatch();
-           
-                    await WriteWithTimeout(batch, TimeSpan.FromSeconds(1));
+
+                    await _responseStream.WriteAsync(batch);
             
                     Logger.LogDebug($"Sent RemoteDeliver message {rd.Message.GetType()} to {rd.Target.Id}");
                     
@@ -54,14 +53,6 @@ namespace Proto.Client
 
         }
 
-        private async Task WriteWithTimeout(MessageBatch batch, TimeSpan timeout)
-        {
-            var timeoutPolicy = Policy.TimeoutAsync(timeout, TimeoutStrategy.Pessimistic);
-
-           
-            await timeoutPolicy.ExecuteAsync(() => _responseStream.WriteAsync(batch));
-           
-            
-        }
+       
     }
 }

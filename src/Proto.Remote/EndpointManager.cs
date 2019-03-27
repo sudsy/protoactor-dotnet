@@ -40,6 +40,7 @@ namespace Proto.Remote
 
             var props = Props.FromProducer(() => new EndpointSupervisor())
                              .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
+                             .WithChildSupervisorStrategy(new ExponentialBackoffStrategy(TimeSpan.FromMinutes(5), TimeSpan.FromMilliseconds(250)))
                              .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
             _endpointSupervisor = RootContext.Empty.SpawnNamed(props, "EndpointSupervisor");
             _endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);

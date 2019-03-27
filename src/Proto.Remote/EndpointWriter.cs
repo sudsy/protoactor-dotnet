@@ -11,8 +11,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Retry;
+
 
 namespace Proto.Remote
 {
@@ -30,7 +29,7 @@ namespace Proto.Remote
         private Remoting.RemotingClient _client;
         private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
         private IClientStreamWriter<MessageBatch> _streamWriter;
-        private AsyncRetryPolicy _connectionRetryPolicy;
+        
 
         public EndpointWriter(string address, IEnumerable<ChannelOption> channelOptions, CallOptions callOptions, ChannelCredentials channelCredentials)
         {
@@ -38,18 +37,8 @@ namespace Proto.Remote
             _channelOptions = channelOptions;
             _callOptions = callOptions;
             _channelCredentials = channelCredentials;
-            Random jitterer = new Random(); 
-            _connectionRetryPolicy = Policy.Handle<Exception>(ex =>
-            {
-                _logger.LogError($"GRPC Failed to connect to address {_address}\n{ex}");
-                return true;
-            }).WaitAndRetryAsync(RetryCount,retryAttempt =>
-            {
-                var retryInterval = TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
-                       + TimeSpan.FromMilliseconds(jitterer.Next(0, 100));
-                _logger.LogInformation($"Retry connection attempt {retryAttempt} in {retryInterval.TotalSeconds} seconds");
-                return retryInterval;
-            });
+            
+           
         }
 
         public async Task ReceiveAsync(IContext context)
@@ -150,24 +139,10 @@ namespace Proto.Remote
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
 
-            try
-            {
-                await _connectionRetryPolicy.ExecuteAsync(async () =>
-                {
-                    var res = await _client.ConnectAsync(new ConnectRequest());
-                    _serializerId = res.DefaultSerializerId;
-                    _stream = _client.Receive(_callOptions);
-                    _streamWriter = _stream.RequestStream;
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"GRPC Failed to connect after {RetryCount} attempts {_address}\n{ex}");
-                ctx.Self.Stop();
-                return;
-
-            }
-            
+            var res = await _client.ConnectAsync(new ConnectRequest());
+            _serializerId = res.DefaultSerializerId;
+            _stream = _client.Receive(_callOptions);
+            _streamWriter = _stream.RequestStream;
            
             
             var _ = Task.Factory.StartNew(async () =>

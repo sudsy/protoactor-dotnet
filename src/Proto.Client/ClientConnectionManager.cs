@@ -3,8 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Timeout;
 using Proto.Remote;
 
 namespace Proto.Client
@@ -13,7 +11,7 @@ namespace Proto.Client
     {
         private static readonly ILogger _logger = Log.CreateLogger<ClientConnectionManager>();
         private static readonly string _clientId = Guid.NewGuid().ToString();
-        private Channel _channel;
+        private static Channel _channel;
         private ClientRemoting.ClientRemotingClient _client;
         private readonly string _hostName;
         private readonly int _port;
@@ -55,7 +53,11 @@ namespace Proto.Client
             {
                 case Started _:
                     _logger.LogDebug("Creating Channel");
-                    _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
+                    if (_channel == null || _channel.State != ChannelState.Ready)
+                    {
+                        _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
+                    }
+                   
                     _logger.LogDebug("Creating Remoting Client");
                     _client = new ClientRemoting.ClientRemotingClient(_channel);
                     var connectionHeaders = new Metadata() {{"clientid", _clientId}};
@@ -107,7 +109,8 @@ namespace Proto.Client
                     };
                     try
                     {
-                        await WriteWithTimeout(clientBatch, TimeSpan.FromSeconds(1));
+
+                        await _clientStreams.RequestStream.WriteAsync(clientBatch);
                     }
                     catch (Exception ex)
                     {
@@ -125,21 +128,6 @@ namespace Proto.Client
             
         }
 
-        
-        private async Task WriteWithTimeout(ClientMessageBatch batch, TimeSpan timeout)
-        {
-            var timeoutPolicy = Policy.TimeoutAsync(timeout, TimeoutStrategy.Pessimistic);
-
-            try
-            {
-                await timeoutPolicy.ExecuteAsync(() => _clientStreams.RequestStream.WriteAsync(batch));
-            }
-            catch(Exception ex)
-            {
-                _logger.LogWarning($"DeadLetter - could not send client message batch {batch} to server", ex);
-            }
-            
-            
-        }
+       
     }
 }

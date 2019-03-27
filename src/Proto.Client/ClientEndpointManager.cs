@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Retry;
 using Proto.Remote;
 
 namespace Proto.Client
