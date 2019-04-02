@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -109,6 +110,13 @@ namespace Proto.Remote
 
     public class EndpointSupervisor : IActor, ISupervisorStrategy
     {
+        private static readonly ILogger Logger = Log.CreateLogger("EndpointSupervisor");
+        
+        private readonly TimeSpan _initialBackoff = TimeSpan.FromMilliseconds(250);
+        private readonly int _maxNrOfRetries = 10;
+        private readonly Random _random = new Random();
+        private readonly TimeSpan? _withinTimeSpan = TimeSpan.FromSeconds(30);
+
         public Task ReceiveAsync(IContext context)
         {
             if (context.Message is string address)
@@ -120,9 +128,53 @@ namespace Proto.Remote
             return Actor.Done;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object message)
+        //TODO: Refactor one of the generic supervisors so that this can inherit from it and be more DRY
+        public new void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
+            object message)
         {
-            supervisor.RestartChildren(cause, child);
+            if (ShouldStop(rs))
+            {
+                Logger.LogWarning($"Stopping {child.ToShortString()} after retries expired Reason { reason}");
+                supervisor.StopChildren(supervisor.Children.ToArray());
+            }
+            else
+            {
+                var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
+                var noise = _random.Next(500);
+                var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
+                Task.Delay(duration).ContinueWith(t =>
+                {
+                    Logger.LogWarning($"Restarting {child.ToShortString()} after {duration} Reason {reason}");
+                    supervisor.RestartChildren(reason, child);
+                });
+            }
+        }
+        
+        private bool ShouldStop(RestartStatistics rs)
+        {
+            if (_maxNrOfRetries == 0)
+            {
+                return true;
+            }
+            rs.Fail();
+            
+            if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
+            {
+                rs.Reset();
+                return true;
+            }
+            
+            return false;
+        }
+        
+        private long ToNanoseconds(TimeSpan timeSpan)
+        {
+            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
+        }
+
+        private long ToMilliseconds(long nanoseconds)
+        {
+            return nanoseconds / 1000000;
         }
 
         private static PID SpawnWatcher(string address, IContext context)

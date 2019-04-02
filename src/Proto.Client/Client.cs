@@ -156,10 +156,7 @@ namespace Proto.Client
         
         private void checkIfDisposed()
         {
-            if (_connectionFailed)
-            {
-                throw new ApplicationException("Connection to client host failed after several retries");
-            }
+       
             if (_disposed) throw new InvalidOperationException("Client is disposed");
         }
         
@@ -169,7 +166,8 @@ namespace Proto.Client
 
             if (_connectionFailed)
             {
-                throw new ApplicationException("Connection to client host failed after several retries");
+                _logger.LogWarning("Did not send message Connection to client host failed after several retries");
+                return;
             }
             
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);

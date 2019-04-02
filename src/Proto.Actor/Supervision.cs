@@ -178,6 +178,7 @@ namespace Proto
         }
     }
 
+    
     public class ExponentialBackoffStrategy : ISupervisorStrategy
     {
         private static readonly ILogger Logger = Log.CreateLogger<ExponentialBackoffStrategy>();
@@ -221,6 +222,8 @@ namespace Proto
             return nanoseconds / 1000000;
         }
     }
+    
+    
 
     public class AlwaysRestartStrategy : ISupervisorStrategy
     {
