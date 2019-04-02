@@ -23,6 +23,8 @@ namespace Proto.Client
         private PID _clientHostPID;
         private bool _disposed;
         private static bool _connectionFailed;
+        
+        
 
 
         static Client()
@@ -35,35 +37,56 @@ namespace Proto.Client
         {
             _logger.LogDebug("CreateAsync Called");
             var endpointConfig = Tuple.Create(hostname, port);
-            if (_endpointConfig != null & !endpointConfig.Equals(_endpointConfig))
+            if (_endpointConfig != null & !endpointConfig.Equals(_endpointConfig) & _clientEndpointManager != null)
             {
                 throw new InvalidOperationException("Can't connect to multiple client hosts");
             }
-            if (_clientEndpointManager == null)
-            {
-                _logger.LogDebug("No endpoint manager available - creating new one");
-                
-                //Exponential Backoff for client connection
-                var backoffStrategy =
-                    new ExponentialBackoffWithAction(() =>
-                    {
-                        _clientEndpointManager = null;
-                        _connectionFailed = true;
-                    }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromSeconds(30));
-                var clientEndpointManager =
-                    RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientMarshaller");
-                
-                await RootContext.Empty.RequestAsync<int>(clientEndpointManager, new AcquireClientEndpointReference(), TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
-                _connectionFailed = false;
-                _clientEndpointManager = clientEndpointManager;
-                _endpointConfig = endpointConfig;
-                return new Client();    
-            }
 
-            _logger.LogDebug($"Existing endpoint manager found {_clientEndpointManager} reusing it");
-            await RootContext.Empty.RequestAsync<int>(_clientEndpointManager, new AcquireClientEndpointReference(),
-                TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
-            return new Client();  
+         
+            if (_clientEndpointManager == null)
+             {
+                
+                 _logger.LogDebug("No endpoint manager available - creating new one");
+     
+                 //Exponential Backoff for client connection
+                 var backoffStrategy =
+                     new ExponentialBackoffWithAction(() =>
+                     {
+                         
+                         _clientEndpointManager = null;
+                         _connectionFailed = true;
+                     }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromSeconds(30));
+                 _clientEndpointManager =
+                     RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientEndpointManager");
+ 
+                 
+             }
+            
+
+              
+            try
+            {
+                await RootContext.Empty.RequestAsync<int>(_clientEndpointManager, new AcquireClientEndpointReference(),
+                    TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Failed to acquire endpoint reference prior to timeout resetting endpoint manager");
+                _clientEndpointManager?.Stop();
+                
+                _clientEndpointManager = null;
+                
+                _connectionFailed = true;
+                
+                throw;
+            }
+            
+            _connectionFailed = false;
+                    
+            _endpointConfig = endpointConfig;
+            
+            return new Client();    
+            
             
             
             

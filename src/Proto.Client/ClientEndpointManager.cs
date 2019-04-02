@@ -26,6 +26,7 @@ namespace Proto.Client
 
         public ClientEndpointManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
+            _logger.LogDebug("Constructor for Client Endpoint Manager called");
             _hostName = hostname;
             _port = port;
             _config = config;
@@ -61,6 +62,7 @@ namespace Proto.Client
                             new ClientConnectionManager(_hostName, _port, _config, _connectionTimeoutMs))
                             .WithChildSupervisorStrategy(escalateFailureStrategy),
                         "connmgr");
+                    _logger.LogDebug($"Spawned connection manager - endpoint manager now has {context.Children.Count} child(ren)");
 
                     _endpointReferenceRequestors.Enqueue(context.Sender);
                     _behaviour.Become(WaitingForConnection);
@@ -100,8 +102,16 @@ namespace Proto.Client
 
                     break;
                 case RemoteDeliver rd:
-                    _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer while waiting for connection");
-                    context.Forward(_clientConnectionManager);
+                    if (_clientConnectionManager != null)
+                    {
+                        _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer while waiting for connection");
+                        context.Forward(_clientConnectionManager);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Dumping Remote Deliver message since _clientConnection unavailable");
+                    }
+                   
                     break;
             }
 
@@ -149,7 +159,7 @@ namespace Proto.Client
             _logger.LogDebug($"Releasing EndpointReference  - reference count after release is {_endpointReferenceCount}");
             if (_endpointReferenceCount <= 0)
             {
-                _clientConnectionManager.Stop();
+                _clientConnectionManager.Poison();
                 _clientConnectionManager = null;
                 _endpointReferenceCount = 0; //Just to be sure it's never less than zero
                 _behaviour.Become(NoConnection);
