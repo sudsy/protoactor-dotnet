@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,8 @@ namespace Proto.Client
         private Behavior _behaviour;
         private Queue<PID> _endpointReferenceRequestors = new Queue<PID>();
         private PID _hostProcess;
+
+        private CancellationTokenSource _cancelExistingClientSource = null;
 
 
         public ClientEndpointManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
@@ -82,8 +85,19 @@ namespace Proto.Client
                     break;
                     //Shouldn't need to deal with release request here because nothing has been allocated
                 case ClientHostPIDResponse clientHostPidResponse:
-                    ProcessRegistry.Instance.Address = "client://" + clientHostPidResponse.HostProcess.Address + "/" +
-                                                       clientHostPidResponse.HostProcess.Id;
+                    //Check if this is the same as the existing address - invalidate existing clients if not
+                    var clientAddress = "client://" + clientHostPidResponse.HostProcess.Address + "/" +
+                                        clientHostPidResponse.HostProcess.Id;
+                    if (ProcessRegistry.Instance.Address != clientAddress)
+                    {
+                        _cancelExistingClientSource?.Cancel();
+                  
+                    }
+                    
+                    ProcessRegistry.Instance.Address = clientAddress;
+                    _cancelExistingClientSource = new CancellationTokenSource();
+                    
+                    
 
                     _hostProcess = clientHostPidResponse.HostProcess;
                     
@@ -91,7 +105,7 @@ namespace Proto.Client
                     {
                         var referenceRequestor = _endpointReferenceRequestors.Dequeue();
                         _endpointReferenceCount++;
-                        context.Send(referenceRequestor, _endpointReferenceCount);
+                        context.Send(referenceRequestor, _cancelExistingClientSource.Token);
                     }
                     
                     _behaviour.Become(ConnectionStarted);
@@ -134,7 +148,7 @@ namespace Proto.Client
                    
  
                     _endpointReferenceCount++;
-                    context.Respond(_endpointReferenceCount);
+                    context.Respond(_cancelExistingClientSource.Token);
                     break;
                 
                 case ReleaseClientEndpointReference _:

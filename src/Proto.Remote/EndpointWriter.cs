@@ -115,6 +115,12 @@ namespace Proto.Remote
 
         private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
         {
+            if (_streamWriter == null)
+            {
+                context.Stash();
+                _logger.LogDebug("Stashing message while waiting for connection");
+                return;
+            }
             try
             {
                 await _streamWriter.WriteAsync(batch);
@@ -128,10 +134,20 @@ namespace Proto.Remote
         }
 
         //shutdown channel before restarting
-        private Task RestartingAsync() => _channel.ShutdownAsync();
-
+        private Task RestartingAsync() => ShutDownChannel();
+       
         //shutdown channel before stopping
-        private Task StoppedAsync() => _channel.ShutdownAsync();
+        private Task StoppedAsync() => ShutDownChannel();
+        
+        private Task ShutDownChannel() 
+        {
+            if (_channel != null && _channel.State != ChannelState.Shutdown)
+            {
+                return _channel.ShutdownAsync();
+            }
+
+            return Actor.Done;
+        }
 
         private async Task StartedAsync(IContext ctx)
         {

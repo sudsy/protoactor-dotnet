@@ -22,79 +22,14 @@ namespace Proto.Client
         
         private PID _clientHostPID;
         private bool _disposed;
-        private static bool _connectionFailed;
-        
-        
+        private CancellationToken _clientValidToken;
 
 
-        static Client()
+      
+
+        private Client(CancellationToken clientValidToken)
         {
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            
-        }
-
-        public static async Task<Client> CreateAsync(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
-        {
-            _logger.LogDebug("CreateAsync Called");
-            var endpointConfig = Tuple.Create(hostname, port);
-            if (_endpointConfig != null & !endpointConfig.Equals(_endpointConfig) & _clientEndpointManager != null)
-            {
-                throw new InvalidOperationException("Can't connect to multiple client hosts");
-            }
-
-         
-            if (_clientEndpointManager == null)
-             {
-                
-                 _logger.LogDebug("No endpoint manager available - creating new one");
-     
-                 //Exponential Backoff for client connection
-                 var backoffStrategy =
-                     new ExponentialBackoffWithAction(() =>
-                     {
-                         
-                         _clientEndpointManager = null;
-                         _connectionFailed = true;
-                     }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromSeconds(30));
-                 _clientEndpointManager =
-                     RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientEndpointManager");
- 
-                 
-             }
-            
-
-              
-            try
-            {
-                await RootContext.Empty.RequestAsync<int>(_clientEndpointManager, new AcquireClientEndpointReference(),
-                    TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning("Failed to acquire endpoint reference prior to timeout resetting endpoint manager");
-                _clientEndpointManager?.Stop();
-                
-                _clientEndpointManager = null;
-                
-                _connectionFailed = true;
-                
-                throw;
-            }
-            
-            _connectionFailed = false;
-                    
-            _endpointConfig = endpointConfig;
-            
-            return new Client();    
-            
-            
-            
-            
-        }
-
-        private Client()
-        {
-            
+            _clientValidToken = clientValidToken;
         }
 
       
@@ -125,7 +60,8 @@ namespace Proto.Client
 
         }
 
-       
+        public bool Cancelled => _clientValidToken.IsCancellationRequested;
+
 
         public async Task<ActorPidResponse> SpawnOnClientHostAsync(string name, string kind, TimeSpan timeout)
         {
@@ -161,14 +97,10 @@ namespace Proto.Client
         }
         
         
-        public static void SendMessage(PID target, object envelope, int serializerId)
+        public void SendMessage(PID target, object envelope, int serializerId)
         {
 
-            if (_connectionFailed)
-            {
-                _logger.LogWarning("Did not send message Connection to client host failed after several retries");
-                return;
-            }
+            _clientValidToken.ThrowIfCancellationRequested();
             
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
             
@@ -182,7 +114,76 @@ namespace Proto.Client
     
 
 
+        static Client()
+        {
+            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            
+        }
 
+        public static async Task<Client> CreateAsync(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
+        {
+            _logger.LogDebug("CreateAsync Called");
+            var endpointConfig = Tuple.Create(hostname, port);
+            if (_endpointConfig != null & !endpointConfig.Equals(_endpointConfig) & _clientEndpointManager != null)
+            {
+                throw new InvalidOperationException("Can't connect to multiple client hosts");
+            }
+
+         
+            if (_clientEndpointManager == null)
+             {
+                
+                 _logger.LogDebug("No endpoint manager available - creating new one");
+     
+                 //Exponential Backoff for client connection
+                 var backoffStrategy =
+                     new ExponentialBackoffWithAction(() =>
+                     {
+                         
+                         _clientEndpointManager = null;
+                         
+                     }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromSeconds(30));
+                 _clientEndpointManager =
+                     RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientEndpointManager");
+ 
+                 
+             }
+            
+
+              
+            try
+            {
+                var clientValidToken = await RootContext.Empty.RequestAsync<CancellationToken>(_clientEndpointManager, new AcquireClientEndpointReference(),
+                    TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
+                
+                
+                    
+                _endpointConfig = endpointConfig;
+            
+                var client = new Client(clientValidToken);
+                
+                ProcessRegistry.Instance.RegisterHostResolver(pid => client.Cancelled ? null : new ClientHostProcess(pid, client));
+                
+                return client;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Failed to acquire endpoint reference prior to timeout resetting endpoint manager");
+                _clientEndpointManager?.Stop();
+                
+                _clientEndpointManager = null;
+                
+                
+                
+                throw;
+            }
+            
+             
+            
+            
+            
+            
+        }
 
 
    

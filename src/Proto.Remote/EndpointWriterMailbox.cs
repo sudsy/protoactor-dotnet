@@ -79,15 +79,24 @@ namespace Proto.Remote
                 }
                 if (!_suspended)
                 {
+                   
                     batch.Clear();
                     object msg;
                     while ((msg = _userMessages.Pop()) != null)
                     {
+                        if (msg is EndpointTerminatedEvent)
+                        {
+                            await _invoker.InvokeUserMessageAsync(msg);
+                            continue;
+                        }
+
                         batch.Add((RemoteDeliver) msg);
                         if (batch.Count >= _batchSize)
                         {
                             break;
                         }
+                        
+                       
                     }
 
                     if (batch.Count > 0)

@@ -69,7 +69,7 @@ namespace Proto.Client.Tests
                 var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
                 var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
                 
-                Client.SendMessage(clientHostActor, envelope, 1);
+                client.SendMessage(clientHostActor, envelope, 1);
                 await tcs.Task;
             };
         }

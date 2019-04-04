@@ -18,10 +18,7 @@ namespace Proto.Client
 
 
 
-        static ClientEndpointReader()
-        {
-            ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess(pid));
-        }
+     
 
         public ClientEndpointReader(IAsyncStreamReader<MessageBatch> responseStream)
         {

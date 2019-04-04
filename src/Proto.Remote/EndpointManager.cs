@@ -60,6 +60,7 @@ namespace Proto.Remote
 
         private static void OnEndpointTerminated(EndpointTerminatedEvent msg)
         {
+            Logger.LogDebug($"Endpoint {msg.Address} terminated removing from connections");
             if (Connections.TryRemove(msg.Address, out var v))
             {
                 var endpoint = v.Value;
@@ -94,16 +95,23 @@ namespace Proto.Remote
 
         public static void RemoteDeliver(RemoteDeliver msg)
         {
+            //TODO - remove this logging
+            Logger.LogDebug($"Received Message for {msg.Target.Address}");
             var endpoint = EnsureConnected(msg.Target.Address);
             RootContext.Empty.Send(endpoint.Writer, msg);
+            Logger.LogDebug($"Sent Message for {msg.Target.Address}");
         }
 
         private static Endpoint EnsureConnected(string address)
         {
             var conn = Connections.GetOrAdd(address, v =>
                 new Lazy<Endpoint>(() =>
-                    RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result)
-            );
+                {
+                    Logger.LogDebug($"Requesting new endpoint for {v}");
+                    var endpoint = RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result;
+                    Logger.LogDebug($"Created new endpoint for {v}");
+                    return endpoint;
+                }));
             return conn.Value;
         }
     }
@@ -135,7 +143,7 @@ namespace Proto.Remote
             if (ShouldStop(rs))
             {
                 Logger.LogWarning($"Stopping {child.ToShortString()} after retries expired Reason { reason}");
-                supervisor.StopChildren(supervisor.Children.ToArray());
+                supervisor.StopChildren(child);
             }
             else
             {
