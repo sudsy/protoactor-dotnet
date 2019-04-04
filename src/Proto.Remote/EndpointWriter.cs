@@ -17,6 +17,7 @@ namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {
+        private static readonly ILogger Logger = Log.CreateLogger<EndpointWriter>();
         private const int RetryCount = 2;
         
         private int _serializerId;
@@ -43,6 +44,7 @@ namespace Proto.Remote
 
         public async Task ReceiveAsync(IContext context)
         {
+            Logger.LogDebug($"EndpointWriter received message {context.Message.GetType()} while channel status is {_channel?.State}");
             switch (context.Message)
             {
                 case Started _:
