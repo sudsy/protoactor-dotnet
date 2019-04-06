@@ -44,7 +44,7 @@ namespace Proto.Remote
 
         public async Task ReceiveAsync(IContext context)
         {
-            Logger.LogDebug($"EndpointWriter received message {context.Message.GetType()} while channel status is {_channel?.State}");
+            Logger.LogDebug($"EndpointWriter received message {context.Message.GetType()} for {_address} while channel status is {_channel?.State}");
             switch (context.Message)
             {
                 case Started _:
@@ -119,8 +119,8 @@ namespace Proto.Remote
         {
             if (_streamWriter == null)
             {
-                context.Stash();
-                _logger.LogDebug("Stashing message while waiting for connection");
+                
+                _logger.LogError($"gRPC Failed to send to address {_address}, reason No Connection available");
                 return;
             }
             try
@@ -154,13 +154,18 @@ namespace Proto.Remote
         private async Task StartedAsync(IContext ctx)
         {
             _logger.LogDebug($"Connecting to address {_address}");
+            
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
+            
+            _logger.LogDebug($"created channel and client for address {_address}");
 
             var res = await _client.ConnectAsync(new ConnectRequest());
             _serializerId = res.DefaultSerializerId;
             _stream = _client.Receive(_callOptions);
             _streamWriter = _stream.RequestStream;
+            
+            _logger.LogDebug($"Connected client for address {_address}");
            
             
             var _ = Task.Factory.StartNew(async () =>
@@ -179,6 +184,8 @@ namespace Proto.Remote
                     Actor.EventStream.Publish(terminated);
                 }
             });
+            
+            _logger.LogDebug($"created reader for address {_address}");
 
             var connected = new EndpointConnectedEvent
             {

@@ -100,15 +100,26 @@ namespace Proto.Client
         public void SendMessage(PID target, object envelope, int serializerId)
         {
 
-            _clientValidToken.ThrowIfCancellationRequested();
+            if (_clientValidToken.IsCancellationRequested)
+            {
+                throw new ApplicationException("Unable to reconnect to the same host");
+            }
+            
             
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
             
             
             var env = new RemoteDeliver(header, message, target, sender, serializerId);
-            
 
-            RootContext.Empty.Send(_clientEndpointManager, env);
+            if (_clientEndpointManager == null)
+            {
+                _logger.LogWarning("Could not send message - endpointmanager was null");
+            }
+            else
+            {
+                RootContext.Empty.Send(_clientEndpointManager, env);    
+            }
+            
 
         }
     

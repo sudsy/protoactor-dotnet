@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -34,6 +35,7 @@ namespace Proto.Remote
         private static PID _endpointSupervisor;
         private static Subscription<object> _endpointTermEvnSub;
         private static Subscription<object> _endpointConnEvnSub;
+        private static HashSet<string> _deadHosts = new HashSet<string>();
 
         public static void Start()
         {
@@ -64,6 +66,7 @@ namespace Proto.Remote
             if (Connections.TryRemove(msg.Address, out var v))
             {
                 var endpoint = v.Value;
+                _deadHosts.Add(msg.Address);
                 RootContext.Empty.Send(endpoint.Watcher,msg);
                 RootContext.Empty.Send(endpoint.Writer,msg);
             }
@@ -95,7 +98,12 @@ namespace Proto.Remote
 
         public static void RemoteDeliver(RemoteDeliver msg)
         {
-            //TODO - remove this logging
+            if (_deadHosts.Contains(msg.Target.Address))
+            {
+                Logger.LogWarning($"Could not deliver {msg.Message.GetType()} to {msg.Target.Address} - host is down");
+                return;
+            }
+                
             Logger.LogDebug($"Received Message for {msg.Target.Address}");
             var endpoint = EnsureConnected(msg.Target.Address);
             RootContext.Empty.Send(endpoint.Writer, msg);

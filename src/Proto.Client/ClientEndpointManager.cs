@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Mailbox;
 using Proto.Remote;
 
 namespace Proto.Client
@@ -56,7 +57,9 @@ namespace Proto.Client
                     
                     var escalateFailureStrategy = new OneForOneStrategy((pid, reason) =>
                     {
+                        context.Self.SendSystemMessage(SuspendMailbox.Instance);
                         _behaviour.Become(WaitingForConnection);
+                        
                         return SupervisorDirective.Escalate;
                     }, 1,null);
 
@@ -88,6 +91,7 @@ namespace Proto.Client
                     //Check if this is the same as the existing address - invalidate existing clients if not
                     var clientAddress = "client://" + clientHostPidResponse.HostProcess.Address + "/" +
                                         clientHostPidResponse.HostProcess.Id;
+                    _logger.LogInformation($"Connected to clienthost as {clientAddress}");
                     if (ProcessRegistry.Instance.Address != clientAddress)
                     {
                         _cancelExistingClientSource?.Cancel();
@@ -108,6 +112,7 @@ namespace Proto.Client
                         context.Send(referenceRequestor, _cancelExistingClientSource.Token);
                     }
                     
+                    context.Self.SendSystemMessage(ResumeMailbox.Instance);
                     _behaviour.Become(ConnectionStarted);
                     break;
                 

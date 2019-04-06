@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
-        <Version>0.2.95-proto-client</Version>
+        <Version>0.2.97-proto-client</Version>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
