@@ -146,8 +146,6 @@ namespace Proto.Remote
 
         public static void SendMessage(PID pid, object msg, int serializerId)
         {
-            //Temporary bypass of remote deliver
-            return;
             
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
 

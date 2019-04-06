@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
@@ -20,6 +21,7 @@ namespace Proto.Remote
 
     public class EndpointWriterMailbox : IMailbox
     {
+        private static readonly ILogger Logger = Log.CreateLogger<EndpointWriterMailbox>();
         private readonly int _batchSize;
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
@@ -77,6 +79,9 @@ namespace Proto.Remote
                     m = sys;
                     await _invoker.InvokeSystemMessageAsync(sys);
                 }
+
+              
+                
                 if (!_suspended)
                 {
                    
@@ -109,21 +114,24 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
+                Logger.LogWarning("Exception in RunAsync", x);
                 _invoker.EscalateFailure(x,m);
             }
 
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_userMessages.HasMessages || _systemMessages.HasMessages)
+            if (_userMessages.HasMessages || _systemMessages.HasMessages )
             {
                 Schedule();
+                
             }
         }
 
         protected void Schedule()
         {
-            if (Interlocked.Exchange(ref _status, MailboxStatus.Busy) == MailboxStatus.Idle)
+           
+            if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
             {
                 _dispatcher.Schedule(RunAsync);
             }

@@ -74,7 +74,7 @@ namespace Proto.Client.Tests
             };
         }
 
-        [Fact, DisplayTestMethodName]
+//        [Fact, DisplayTestMethodName]
         public async void CanRequestAsyncToRemoteFromClientActor()
         {
 
