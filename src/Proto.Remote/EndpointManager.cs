@@ -35,7 +35,7 @@ namespace Proto.Remote
         private static PID _endpointSupervisor;
         private static Subscription<object> _endpointTermEvnSub;
         private static Subscription<object> _endpointConnEvnSub;
-        private static HashSet<string> _deadHosts = new HashSet<string>();
+        
 
         public static void Start()
         {
@@ -66,7 +66,6 @@ namespace Proto.Remote
             if (Connections.TryRemove(msg.Address, out var v))
             {
                 var endpoint = v.Value;
-                _deadHosts.Add(msg.Address);
                 RootContext.Empty.Send(endpoint.Watcher,msg);
                 RootContext.Empty.Send(endpoint.Writer,msg);
             }
@@ -98,19 +97,9 @@ namespace Proto.Remote
 
         public static void RemoteDeliver(RemoteDeliver msg)
         {
-            if (_deadHosts.Contains(msg.Target.Address))
-            {
-                Logger.LogWarning($"Could not deliver {msg.Message.GetType()} to {msg.Target.Address} - host is down");
-                return;
-            }
-                
-            Logger.LogDebug($"Received Message for {msg.Target.Address}");
             var endpoint = EnsureConnected(msg.Target.Address);
-            
-            
-            
             RootContext.Empty.Send(endpoint.Writer, msg);
-            Logger.LogDebug($"Sent Message for {msg.Target.Address}");
+           
         }
 
         private static Endpoint EnsureConnected(string address)
@@ -130,11 +119,11 @@ namespace Proto.Remote
     public class EndpointSupervisor : IActor, ISupervisorStrategy
     {
         private static readonly ILogger Logger = Log.CreateLogger("EndpointSupervisor");
-        
-        private readonly TimeSpan _initialBackoff = TimeSpan.FromMilliseconds(250);
         private readonly int _maxNrOfRetries = 10;
         private readonly Random _random = new Random();
-        private readonly TimeSpan? _withinTimeSpan = TimeSpan.FromSeconds(30);
+        private readonly TimeSpan? _withinTimeSpan = TimeSpan.FromMinutes(10);
+
+        private int _backoff = 250;
 
         public Task ReceiveAsync(IContext context)
         {
@@ -158,9 +147,9 @@ namespace Proto.Remote
             }
             else
             {
-                var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
+                _backoff = _backoff * 2;
                 var noise = _random.Next(500);
-                var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
+                var duration = TimeSpan.FromMilliseconds(_backoff + noise);
                 Task.Delay(duration).ContinueWith(t =>
                 {
                     Logger.LogWarning($"Restarting {child.ToShortString()} after {duration} Reason {reason}");

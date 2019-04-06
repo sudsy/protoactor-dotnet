@@ -12,7 +12,7 @@ namespace Proto.Client
     {
         private static readonly ILogger _logger = Log.CreateLogger<ClientEndpointReader>();
         private readonly IAsyncStreamReader<MessageBatch> _responseStream;
-        private Object _clientHostPIDResponse;
+        private ClientHostPIDResponse _clientHostPIDResponse;
         private PID _pidRequester;
 
 
@@ -31,6 +31,19 @@ namespace Proto.Client
             {
                 case Started _:
                     context.Send(context.Self, "listen");
+                    break;
+                case ClientHostPIDRequest _:
+                    _logger.LogDebug("Received PID Request");
+                    if (_clientHostPIDResponse != null)
+                    {
+                        _logger.LogDebug("Returning PID Response");
+                        context.Respond(_clientHostPIDResponse);
+                    }
+                    else
+                    {
+                        _pidRequester = context.Sender;
+                    }
+
                     break;
                 
                 case String str:
@@ -58,12 +71,17 @@ namespace Proto.Client
                         var message = Serialization.Deserialize(messageBatch.TypeNames[envelope.TypeId],
                             envelope.MessageData, envelope.SerializerId);
 
-                        if (message is ClientHostPIDResponse)
+                        if (message is ClientHostPIDResponse pidResponse)
                         {
-
-                            context.Send(context.Parent, message);
-
-
+                            _logger.LogDebug("Received PID Response");
+                            if (_pidRequester != null)
+                            {
+                                context.Send(_pidRequester, message);
+                            }
+                            else
+                            {
+                                _clientHostPIDResponse = pidResponse;
+                            }
                             context.Send(context.Self, "listen");
                             return;
 

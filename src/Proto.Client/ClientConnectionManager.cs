@@ -67,27 +67,26 @@ namespace Proto.Client
 
                     _logger.LogDebug("Got client streams - creating endpoint reader");
 
-                    Task.Run(() =>
+                    var endpointSpawned = new TaskCompletionSource<bool>();
+                    var endpointRunner = Task.Run(() =>
                     {
                         //Start this in a new process so the loop is not affected by parent processes shuttting down (eg. Orleans)
                         _endpointReader =
                             context.SpawnPrefix(Props.FromProducer(() =>
                                     new ClientEndpointReader(_clientStreams.ResponseStream))
                                 , "reader");
+                        endpointSpawned.TrySetResult(true);
                     });
-                    
-                   
+
+                    await endpointSpawned.Task;
+                    var pidResponse = await context.RequestAsync<ClientHostPIDResponse>(_endpointReader, new ClientHostPIDRequest(), TimeSpan.FromMilliseconds(_connectionTimeoutMs));
+                    context.Send(context.Parent, pidResponse);
+                    _behaviour.Become(Started);
                     
                     _logger.LogDebug("Endpoint reader created");
                     break;
                
-                case ClientHostPIDResponse clientHostPidResponse:
-                    _behaviour.Become(Started);
-                    context.Forward(context.Parent);
-                    break;
-                case RemoteDeliver rd:
-                    _logger.LogWarning("Unexpected Remote deliver message while starting");
-                    break;
+               
             }
         }
 

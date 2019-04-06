@@ -63,7 +63,7 @@ namespace Proto.Client
                         return SupervisorDirective.Escalate;
                     }, 1,null);
 
-                    //TODO: Maybe we need exponential backoff here
+                   
                     _clientConnectionManager = context.SpawnPrefix(Props.FromProducer(() =>
                             new ClientConnectionManager(_hostName, _port, _config, _connectionTimeoutMs))
                             .WithChildSupervisorStrategy(escalateFailureStrategy),
