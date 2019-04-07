@@ -150,10 +150,10 @@ namespace Proto.Client
                  var backoffStrategy =
                      new ExponentialBackoffWithAction(() =>
                      {
-                         
+                         //consider if clients should be invalidated here
                          _clientEndpointManager = null;
                          
-                     }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromSeconds(30));
+                     }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromMinutes(1));
                  _clientEndpointManager =
                      RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientEndpointManager");
  

@@ -116,13 +116,13 @@ namespace Proto.Remote
             {
                 Logger.LogWarning("Exception in RunAsync", x);
                 _invoker.EscalateFailure(x,m);
-                return;  //Standard mailbox continues the loop, but we are hitting 100% cpu so trying this
+                
             }
 
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_userMessages.HasMessages || _systemMessages.HasMessages )
+            if (_userMessages.HasMessages || _systemMessages.HasMessages &! _suspended )
             {
                 Schedule();
                 
