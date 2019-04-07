@@ -25,9 +25,7 @@ namespace Proto.Client
         private Queue<PID> _endpointReferenceRequestors = new Queue<PID>();
         private PID _hostProcess;
 
-        private CancellationTokenSource _cancelExistingClientSource = null;
-
-
+       
         public ClientEndpointManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
             _logger.LogDebug("Constructor for Client Endpoint Manager called");
@@ -57,7 +55,7 @@ namespace Proto.Client
                     
                     var escalateFailureStrategy = new OneForOneStrategy((pid, reason) =>
                     {
-                        context.Self.SendSystemMessage(SuspendMailbox.Instance);
+                        
                         _behaviour.Become(WaitingForConnection);
                         
                         return SupervisorDirective.Escalate;
@@ -92,27 +90,20 @@ namespace Proto.Client
                     var clientAddress = "client://" + clientHostPidResponse.HostProcess.Address + "/" +
                                         clientHostPidResponse.HostProcess.Id;
                     _logger.LogInformation($"Connected to clienthost as {clientAddress}");
-                    if (ProcessRegistry.Instance.Address != clientAddress)
-                    {
-                        _cancelExistingClientSource?.Cancel();
-                  
-                    }
+                 
                     
                     ProcessRegistry.Instance.Address = clientAddress;
-                    _cancelExistingClientSource = new CancellationTokenSource();
-                    
-                    
-
+                 
                     _hostProcess = clientHostPidResponse.HostProcess;
                     
                     while (_endpointReferenceRequestors.Count > 0)
                     {
                         var referenceRequestor = _endpointReferenceRequestors.Dequeue();
                         _endpointReferenceCount++;
-                        context.Send(referenceRequestor, _cancelExistingClientSource.Token);
+                        context.Send(referenceRequestor, _endpointReferenceCount);
                     }
                     
-                    context.Self.SendSystemMessage(ResumeMailbox.Instance);
+                    
                     _behaviour.Become(ConnectionStarted);
                     break;
                 
@@ -123,7 +114,7 @@ namespace Proto.Client
                 case RemoteDeliver rd:
                     if (_clientConnectionManager != null)
                     {
-                        _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer while waiting for connection");
+                       
                         context.Forward(_clientConnectionManager);
                     }
                     else
@@ -153,7 +144,7 @@ namespace Proto.Client
                    
  
                     _endpointReferenceCount++;
-                    context.Respond(_cancelExistingClientSource.Token);
+                    context.Respond(_endpointReferenceCount);
                     break;
                 
                 case ReleaseClientEndpointReference _:

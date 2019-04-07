@@ -22,14 +22,14 @@ namespace Proto.Client
         
         private PID _clientHostPID;
         private bool _disposed;
-        private CancellationToken _clientValidToken;
+        
 
 
       
 
-        private Client(CancellationToken clientValidToken)
+        private Client()
         {
-            _clientValidToken = clientValidToken;
+            
         }
 
       
@@ -60,9 +60,7 @@ namespace Proto.Client
 
         }
 
-        public bool Cancelled => _clientValidToken.IsCancellationRequested;
-
-
+        
         public async Task<ActorPidResponse> SpawnOnClientHostAsync(string name, string kind, TimeSpan timeout)
         {
             checkIfDisposed();
@@ -83,7 +81,11 @@ namespace Proto.Client
         {
             if (!_disposed)
             {
-                RootContext.Empty.Send(_clientEndpointManager, new ReleaseClientEndpointReference());
+                if (_clientEndpointManager != null)
+                {
+                    RootContext.Empty.Send(_clientEndpointManager, new ReleaseClientEndpointReference());
+                }
+
                 _disposed = true;
             }
             
@@ -97,14 +99,9 @@ namespace Proto.Client
         }
         
         
-        public void SendMessage(PID target, object envelope, int serializerId)
+        public static void SendMessage(PID target, object envelope, int serializerId)
         {
 
-            if (_clientValidToken.IsCancellationRequested)
-            {
-                throw new ApplicationException("Unable to reconnect to the same host");
-            }
-            
             
             var (message, sender, header) = MessageEnvelope.Unwrap(envelope);
             
@@ -113,7 +110,7 @@ namespace Proto.Client
 
             if (_clientEndpointManager == null)
             {
-                _logger.LogWarning("Could not send message - endpointmanager was null");
+                throw new ApplicationException("Could not send message, no connection available.");
             }
             else
             {
@@ -128,6 +125,7 @@ namespace Proto.Client
         static Client()
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            ProcessRegistry.Instance.RegisterHostResolver(pid => new ClientHostProcess(pid));
             
         }
 
@@ -153,7 +151,7 @@ namespace Proto.Client
                          //consider if clients should be invalidated here
                          _clientEndpointManager = null;
                          
-                     }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromMinutes(1));
+                     }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromMinutes(10));
                  _clientEndpointManager =
                      RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientEndpointManager");
  
@@ -164,16 +162,16 @@ namespace Proto.Client
               
             try
             {
-                var clientValidToken = await RootContext.Empty.RequestAsync<CancellationToken>(_clientEndpointManager, new AcquireClientEndpointReference(),
+                await RootContext.Empty.RequestAsync<int>(_clientEndpointManager, new AcquireClientEndpointReference(),
                     TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
                 
                 
                     
                 _endpointConfig = endpointConfig;
             
-                var client = new Client(clientValidToken);
+                var client = new Client();
                 
-                ProcessRegistry.Instance.RegisterHostResolver(pid => client.Cancelled ? null : new ClientHostProcess(pid, client));
+                
                 
                 return client;
             }
@@ -204,16 +202,17 @@ namespace Proto.Client
     {
         private static readonly ILogger Logger = Log.CreateLogger<ExponentialBackoffWithAction>();
         private Action _actionOnRestartFail;
-        private TimeSpan _initialBackoff;
+        private int _backoff;
         private DateTime _firstFail = DateTime.MinValue;
         private readonly Random _random = new Random();
         private int _maxNrOfRetries;
         private TimeSpan? _withinTimeSpan;
+        private CancellationTokenSource _cancelFutureRestarts = new CancellationTokenSource();
 
         public ExponentialBackoffWithAction(Action actionOnRestartFail,  TimeSpan initialBackoff, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
             _actionOnRestartFail = actionOnRestartFail;
-            _initialBackoff = initialBackoff;
+            _backoff = Convert.ToInt32(initialBackoff.TotalMilliseconds);
             _maxNrOfRetries = maxNrOfRetries;
             _withinTimeSpan = withinTimeSpan;
 
@@ -225,19 +224,20 @@ namespace Proto.Client
             if (ShouldStop(rs))
             {
                 Logger.LogWarning($"Stopping {child.ToShortString()} after retries expired Reason { reason}");
+                _cancelFutureRestarts.Cancel();
                 _actionOnRestartFail();
                 supervisor.StopChildren(supervisor.Children.ToArray());
             }
             else
             {
-                var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
+                _backoff = _backoff * 2;
                 var noise = _random.Next(500);
-                var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
+                var duration = TimeSpan.FromMilliseconds(_backoff + noise);
                 Task.Delay(duration).ContinueWith(t =>
                 {
                     Logger.LogWarning($"Restarting {child.ToShortString()} after {duration} Reason {reason}");
                     supervisor.RestartChildren(reason, child);
-                });
+                },_cancelFutureRestarts.Token);
             }
         }
         

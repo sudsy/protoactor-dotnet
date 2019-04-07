@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -122,6 +123,7 @@ namespace Proto.Remote
         private readonly int _maxNrOfRetries = 10;
         private readonly Random _random = new Random();
         private readonly TimeSpan? _withinTimeSpan = TimeSpan.FromMinutes(10);
+        private CancellationTokenSource _cancelFutureRetires;
 
         private int _backoff = 250;
 
@@ -131,6 +133,7 @@ namespace Proto.Remote
             {
                 var watcher = SpawnWatcher(address, context);
                 var writer = SpawnWriter(address, context);
+                _cancelFutureRetires = new CancellationTokenSource();
                 context.Respond(new Endpoint(writer, watcher));
             }
             return Actor.Done;
@@ -143,6 +146,7 @@ namespace Proto.Remote
             if (ShouldStop(rs))
             {
                 Logger.LogWarning($"Stopping {child.ToShortString()} after retries expired Reason { reason}");
+                _cancelFutureRetires.Cancel();
                 supervisor.StopChildren(child);
             }
             else
@@ -154,7 +158,7 @@ namespace Proto.Remote
                 {
                     Logger.LogWarning($"Restarting {child.ToShortString()} after {duration} Reason {reason}");
                     supervisor.RestartChildren(reason, child);
-                });
+                }, _cancelFutureRetires.Token);
             }
         }
         

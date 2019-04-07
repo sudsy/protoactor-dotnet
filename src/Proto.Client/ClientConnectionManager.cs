@@ -31,6 +31,7 @@ namespace Proto.Client
             _connectionTimeoutMs = connectionTimeoutMs;
             _behaviour = new Behavior();
             _behaviour.Become(Starting);
+            
            
         }
 
