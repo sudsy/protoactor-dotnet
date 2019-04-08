@@ -29,9 +29,7 @@ namespace Proto.Client
         {
             switch (context.Message)
             {
-                case Started _:
-                    context.Send(context.Self, "listen");
-                    break;
+                
                 case ClientHostPIDRequest _:
                     _logger.LogDebug("Received PID Request");
                     if (_clientHostPIDResponse != null)
@@ -43,6 +41,8 @@ namespace Proto.Client
                     {
                         _pidRequester = context.Sender;
                     }
+                    //start listening
+                    context.Send(context.Self, "listen");
 
                     break;
                 
@@ -76,10 +76,12 @@ namespace Proto.Client
                             _logger.LogDebug("Received PID Response");
                             if (_pidRequester != null)
                             {
+                                _logger.LogDebug($"Sending PID Response to requester {_pidRequester}");
                                 context.Send(_pidRequester, message);
                             }
                             else
                             {
+                                _logger.LogDebug($"Storing PID Response for later");
                                 _clientHostPIDResponse = pidResponse;
                             }
                             context.Send(context.Self, "listen");

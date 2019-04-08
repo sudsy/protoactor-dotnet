@@ -82,6 +82,7 @@ namespace Proto.Client
             switch (context.Message)
             {
                 case AcquireClientEndpointReference _:
+                    _logger.LogDebug("AcquireClientReference Request Received while waiting for connection");
                     _endpointReferenceRequestors.Enqueue(context.Sender);
                     break;
                     //Shouldn't need to deal with release request here because nothing has been allocated
@@ -98,6 +99,7 @@ namespace Proto.Client
                     
                     while (_endpointReferenceRequestors.Count > 0)
                     {
+                        _logger.LogDebug($"Responding to AcquireReferenceCount received while starting - reference count prior to grant is {_endpointReferenceCount}");
                         var referenceRequestor = _endpointReferenceRequestors.Dequeue();
                         _endpointReferenceCount++;
                         context.Send(referenceRequestor, _endpointReferenceCount);
@@ -139,7 +141,7 @@ namespace Proto.Client
                     }
                     break;
                 case AcquireClientEndpointReference _:
-                    _logger.LogDebug($"Acquiring EndpointReference  - reference count prior to grant is {_endpointReferenceCount}");
+                    _logger.LogDebug($"Acquiring EndpointReference while connection started - reference count prior to grant is {_endpointReferenceCount}");
                        
                    
  
