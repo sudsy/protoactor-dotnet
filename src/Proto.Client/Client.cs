@@ -110,6 +110,7 @@ namespace Proto.Client
 
             if (_clientEndpointManager == null)
             {
+                _logger.LogWarning("Tried to deliver message when clientEndpoint manager was unavailable");
                 EventStream.Instance.Publish(new DeadLetterEvent(target, message, sender));
                 // throw new ApplicationException("Could not send message, no connection available.");
             }
