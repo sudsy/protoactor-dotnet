@@ -12,7 +12,7 @@ namespace Proto.Client
     public class ClientHostEndpointManager: ClientRemoting.ClientRemotingBase
     {
         
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(ClientHostEndpointManager).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger<ClientHostEndpointManager>();
         
         public ClientHostEndpointManager(string clientHostAddress)
         {

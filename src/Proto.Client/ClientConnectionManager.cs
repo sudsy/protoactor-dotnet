@@ -48,12 +48,13 @@ namespace Proto.Client
             await _behaviour.ReceiveAsync(context);
         }
 
-        private async Task Starting(IContext context)
+        private Task Starting(IContext context)
         {
             switch (context.Message)
             {
                 case Started _:
                     _logger.LogDebug("Creating Channel");
+                    
                     if (_channel == null || _channel.State != ChannelState.Ready)
                     {
                         _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
@@ -68,31 +69,53 @@ namespace Proto.Client
 
                     _logger.LogDebug("Got client streams - creating endpoint reader");
 
-                    var endpointReady = new TaskCompletionSource<bool>();
-                    var endpointRunner = Task.Run(async () =>
-                    {
+                    
+//                    var endpointRunner = Task.Run(async () =>
+//                    {
                         //Start this in a new process so the loop is not affected by parent processes shuttting down (eg. Orleans)
                         _endpointReader =
                             context.SpawnPrefix(Props.FromProducer(() =>
                                     new ClientEndpointReader(_clientStreams.ResponseStream))
                                 , "reader");
-                        var pidResponse = await context.RequestAsync<ClientHostPIDResponse>(_endpointReader, new ClientHostPIDRequest(), TimeSpan.FromMilliseconds(_connectionTimeoutMs));
-                        context.Send(context.Parent, pidResponse);
-                        endpointReady.TrySetResult(true);
-                    });
+                        _behaviour.Become(WaitingForPID);
+                        context.Request(_endpointReader, new ClientHostPIDRequest());
+                        context.SetReceiveTimeout(TimeSpan.FromMilliseconds(_connectionTimeoutMs));
+                        
+                        
+//                    });
 
-                    await endpointReady.Task;
+                  
                    
-                    _behaviour.Become(Started);
+                    
                     
                     _logger.LogDebug("Endpoint reader created");
                     break;
                
                
             }
+
+            return Actor.Done;
         }
 
-        public async Task Started(IContext context)
+        private Task WaitingForPID(IContext context)
+        {
+            switch (context.Message)
+            {
+                case ClientHostPIDResponse pidResponse:
+                    context.CancelReceiveTimeout();
+                    context.Send(context.Parent, pidResponse);
+                    _behaviour.Become(Started);
+                    _logger.LogDebug("PID Response Received");
+                    break;
+                case ReceiveTimeout _:
+                    throw new ApplicationException("Failed to receive client PID within the timeout");
+                    
+            }
+
+            return Actor.Done;
+        }
+
+        private async Task Started(IContext context)
         {
             switch (context.Message)
             {
