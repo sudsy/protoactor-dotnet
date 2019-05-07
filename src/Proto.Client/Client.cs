@@ -110,7 +110,8 @@ namespace Proto.Client
 
             if (_clientEndpointManager == null)
             {
-                throw new ApplicationException("Could not send message, no connection available.");
+                EventStream.Instance.Publish(new DeadLetterEvent(target, message, sender));
+                // throw new ApplicationException("Could not send message, no connection available.");
             }
             else
             {
