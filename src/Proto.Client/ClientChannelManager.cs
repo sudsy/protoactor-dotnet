@@ -9,9 +9,9 @@ using Proto.Remote;
 
 namespace Proto.Client
 {
-    public class ClientEndpointManager: IActor
+    public class ClientChannelManager: IActor
     {
-        private static readonly ILogger _logger = Log.CreateLogger<ClientEndpointManager>();
+        private static readonly ILogger _logger = Log.CreateLogger<ClientChannelManager>();
         
         private int _endpointReferenceCount = 0;
         private string _hostName;
@@ -19,14 +19,15 @@ namespace Proto.Client
         private RemoteConfig _config;
         private int _connectionTimeoutMs;
         
-        private PID _clientConnectionManager;
+        private PID _clientRemotingManager;
         
         private Behavior _behaviour;
         private Queue<PID> _endpointReferenceRequestors = new Queue<PID>();
         private PID _hostProcess;
+        private Channel _channel;
 
-       
-        public ClientEndpointManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
+
+        public ClientChannelManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
         {
             _logger.LogDebug("Constructor for Client Endpoint Manager called");
             _hostName = hostname;
@@ -39,6 +40,10 @@ namespace Proto.Client
 
         public Task ReceiveAsync(IContext context)
         {
+            if (context.Message is Stopped)
+            {
+                return _channel.ShutdownAsync();
+            }
             
             return _behaviour.ReceiveAsync(context);
         }
@@ -47,7 +52,18 @@ namespace Proto.Client
         {
             switch (context.Message)
             {
+                case Started _:
+                    _logger.LogDebug("Creating Channel");
+                    
+                   
+                    _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
+                   
+
+                    break;
+                
                 case AcquireClientEndpointReference _:
+           
+                    
                     _logger.LogDebug($"Acquiring EndpointReference  - reference count prior to grant is {_endpointReferenceCount}");
                        
                     //Standard Supervisor strategy should work, we want a restart in case of failure - we will stop it when finished with it
@@ -62,8 +78,8 @@ namespace Proto.Client
                     }, 1,null);
 
                    
-                    _clientConnectionManager = context.SpawnPrefix(Props.FromProducer(() =>
-                            new ClientConnectionManager(_hostName, _port, _config, _connectionTimeoutMs))
+                    _clientRemotingManager = context.SpawnPrefix(Props.FromProducer(() =>
+                            new ClientRemotingManager(_channel, _connectionTimeoutMs))
                             .WithChildSupervisorStrategy(escalateFailureStrategy),
                         "connmgr");
                     _logger.LogDebug($"Spawned connection manager - endpoint manager now has {context.Children.Count} child(ren)");
@@ -114,10 +130,10 @@ namespace Proto.Client
 
                     break;
                 case RemoteDeliver rd:
-                    if (_clientConnectionManager != null)
+                    if (_clientRemotingManager != null)
                     {
                        
-                        context.Forward(_clientConnectionManager);
+                        context.Forward(_clientRemotingManager);
                     }
                     else
                     {
@@ -157,7 +173,7 @@ namespace Proto.Client
                 case RemoteDeliver rd:
                     
                     _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer");
-                    context.Forward(_clientConnectionManager);
+                    context.Forward(_clientRemotingManager);
                     break;
                 
             }
@@ -171,8 +187,8 @@ namespace Proto.Client
             _logger.LogDebug($"Releasing EndpointReference  - reference count after release is {_endpointReferenceCount}");
             if (_endpointReferenceCount <= 0)
             {
-                _clientConnectionManager.Poison();
-                _clientConnectionManager = null;
+                _clientRemotingManager.Poison();
+                _clientRemotingManager = null;
                 _endpointReferenceCount = 0; //Just to be sure it's never less than zero
                 _behaviour.Become(NoConnection);
             }

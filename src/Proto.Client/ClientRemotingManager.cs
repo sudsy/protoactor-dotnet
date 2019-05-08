@@ -7,15 +7,13 @@ using Proto.Remote;
 
 namespace Proto.Client
 {
-    public class ClientConnectionManager : IActor
+    public class ClientRemotingManager : IActor
     {
-        private static readonly ILogger _logger = Log.CreateLogger<ClientConnectionManager>();
+        private static readonly ILogger _logger = Log.CreateLogger<ClientRemotingManager>();
         private static readonly string _clientId = Guid.NewGuid().ToString();
-        private static Channel _channel;
+        private readonly Channel _channel;
         private ClientRemoting.ClientRemotingClient _client;
-        private readonly string _hostName;
-        private readonly int _port;
-        private readonly RemoteConfig _config;
+       
         private readonly int _connectionTimeoutMs;
         private AsyncDuplexStreamingCall<ClientMessageBatch, MessageBatch> _clientStreams;
         private PID _endpointReader;
@@ -23,11 +21,9 @@ namespace Proto.Client
         
 
 
-        public ClientConnectionManager(string hostname, int port, RemoteConfig config, int connectionTimeoutMs = 10000)
+        public ClientRemotingManager(Channel channel, int connectionTimeoutMs = 10000)
         {
-            _hostName = hostname;
-            _port = port;
-            _config = config;
+            _channel = channel;
             _connectionTimeoutMs = connectionTimeoutMs;
             _behaviour = new Behavior();
             _behaviour.Become(Starting);
@@ -53,12 +49,7 @@ namespace Proto.Client
             switch (context.Message)
             {
                 case Started _:
-                    _logger.LogDebug("Creating Channel");
-                    
-                    if (_channel == null || _channel.State != ChannelState.Ready)
-                    {
-                        _channel = new Channel(_hostName, _port, _config.ChannelCredentials, _config.ChannelOptions);
-                    }
+                  
                    
                     _logger.LogDebug("Creating Remoting Client");
                     _client = new ClientRemoting.ClientRemotingClient(_channel);

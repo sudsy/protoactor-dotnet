@@ -140,22 +140,23 @@ namespace Proto.Client
                 throw new InvalidOperationException("Can't connect to multiple client hosts");
             }
 
+            //Exponential Backoff for client connection
+            var backoffStrategy =
+                new ExponentialBackoffWithAction(() =>
+                {
+                    //consider if clients should be invalidated here
+                    _clientEndpointManager = null;
+                         
+                }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromMinutes(10));
          
             if (_clientEndpointManager == null)
              {
                 
                  _logger.LogDebug("No endpoint manager available - creating new one");
      
-                 //Exponential Backoff for client connection
-                 var backoffStrategy =
-                     new ExponentialBackoffWithAction(() =>
-                     {
-                         //consider if clients should be invalidated here
-                         _clientEndpointManager = null;
-                         
-                     }, TimeSpan.FromMilliseconds(250), 10, TimeSpan.FromMinutes(10));
+                
                  _clientEndpointManager =
-                     RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientEndpointManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientEndpointManager");
+                     RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientChannelManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientEndpointManager");
  
                  
              }
@@ -165,7 +166,7 @@ namespace Proto.Client
             try
             {
                 await RootContext.Empty.RequestAsync<int>(_clientEndpointManager, new AcquireClientEndpointReference(),
-                    TimeSpan.FromMilliseconds(connectionTimeoutMs)).ConfigureAwait(false);
+                    TimeSpan.FromMilliseconds(connectionTimeoutMs / 2)).ConfigureAwait(false);
                 
                 
                     
@@ -182,11 +183,26 @@ namespace Proto.Client
                 _logger.LogWarning("Failed to acquire endpoint reference prior to timeout resetting endpoint manager");
                 _clientEndpointManager?.Stop();
                 
-                _clientEndpointManager = null;
+               
+                
+                _clientEndpointManager =
+                    RootContext.Empty.SpawnPrefix(Props.FromProducer(() => new ClientChannelManager(hostname, port, config, connectionTimeoutMs)).WithChildSupervisorStrategy(backoffStrategy), "clientEndpointManager");
+                
+                await RootContext.Empty.RequestAsync<int>(_clientEndpointManager, new AcquireClientEndpointReference(),
+                    TimeSpan.FromMilliseconds(connectionTimeoutMs / 2)).ConfigureAwait(false);
+                
+                
+                    
+                _endpointConfig = endpointConfig;
+            
+                var client = new Client();
                 
                 
                 
-                throw;
+                return client;
+                
+                
+                
             }
             
              
