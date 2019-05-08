@@ -146,39 +146,50 @@ namespace Proto.Client
             return Actor.Done;
         }
 
-        public async Task ConnectionStarted(IContext context)
+        private Task ConnectionStarted(IContext context)
         {
-            switch (context.Message)
+            try
             {
-                case String str:
-                    if (str == "getclienthostpid")
-                    {
-                        context.Respond(_hostProcess);
-                    }
-                    break;
-                case AcquireClientEndpointReference _:
-                    _logger.LogDebug($"Acquiring EndpointReference while connection started - reference count prior to grant is {_endpointReferenceCount}");
+                switch (context.Message)
+                {
+                    case String str:
+                        if (str == "getclienthostpid")
+                        {
+                            context.Respond(_hostProcess);
+                        }
+                        break;
+                    case AcquireClientEndpointReference _:
+                        _logger.LogDebug($"Acquiring EndpointReference while connection started - reference count prior to grant is {_endpointReferenceCount}");
                        
                    
  
-                    _endpointReferenceCount++;
-                    context.Respond(_endpointReferenceCount);
-                    break;
+                        _endpointReferenceCount++;
+                        context.Respond(_endpointReferenceCount);
+                        break;
                 
-                case ReleaseClientEndpointReference _:
-                    reduceReferenceCount();
+                    case ReleaseClientEndpointReference _:
+                        reduceReferenceCount();
 
-                    break;
+                        break;
                 
-                case RemoteDeliver rd:
+                    case RemoteDeliver rd:
                     
-                    _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer");
-                    context.Forward(_clientRemotingManager);
-                    break;
+                        _logger.LogDebug($"Forwarding Remote Deliver Message to endpoint Writer");
+                        context.Forward(_clientRemotingManager);
+                        break;
+                
+                }
+
                 
             }
-
-            return;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failure while receiving message type {context.Message.GetType()} containing - {context.Message}");
+                throw;
+            }
+            
+            return Actor.Done;
+           
         }
 
         private void reduceReferenceCount()
