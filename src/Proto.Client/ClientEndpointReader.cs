@@ -17,7 +17,6 @@ namespace Proto.Client
 
 
 
-
      
 
         public ClientEndpointReader(IAsyncStreamReader<MessageBatch> responseStream)
@@ -27,6 +26,7 @@ namespace Proto.Client
 
         public async Task ReceiveAsync(IContext context)
         {
+
             switch (context.Message)
             {
                 

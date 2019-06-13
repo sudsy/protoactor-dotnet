@@ -61,8 +61,8 @@ namespace Proto.Client
                     _logger.LogDebug("Got client streams - creating endpoint reader");
 
                     
-//                    var endpointRunner = Task.Run(async () =>
-//                    {
+                    var endpointRunner = Task.Run(async () =>
+                    {
                         //Start this in a new process so the loop is not affected by parent processes shuttting down (eg. Orleans)
                         _endpointReader =
                             context.SpawnPrefix(Props.FromProducer(() =>
@@ -73,7 +73,7 @@ namespace Proto.Client
                         context.SetReceiveTimeout(TimeSpan.FromMilliseconds(_connectionTimeoutMs));
                         
                         
-//                    });
+                    });
 
                   
                    
