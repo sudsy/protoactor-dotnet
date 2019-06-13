@@ -30,7 +30,7 @@ namespace Proto.Cluster.Consul
         /// <summary>
         /// Default value is 10 seconds
         /// </summary>
-        public TimeSpan? DeregisterCritical { get; set; } = TimeSpan.FromSeconds(30);
+        public TimeSpan? DeregisterCritical { get; set; } = TimeSpan.FromSeconds(60);
 
         /// <summary>
         /// Default value is 20 seconds

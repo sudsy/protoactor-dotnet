@@ -1,0 +1,1 @@
+docker run --rm --name=consul-agent -p 8500:8500 -e CONSUL_BIND_INTERFACE=eth0 consul agent -retry-join=172.17.0.2 -client 0.0.0.0

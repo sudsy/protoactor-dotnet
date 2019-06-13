@@ -20,6 +20,7 @@ namespace Node2
     {
         static void Main(string[] args)
         {
+            var exitEvent = new ManualResetEvent(false);
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             var props = Props.FromFunc(ctx =>
             {
@@ -39,12 +40,17 @@ namespace Node2
             Remote.RegisterKnownKind("HelloKind", props);
 
             // SINGLE REMOTE INSTANCE
-            Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new SingleRemoteInstanceProvider(parsedArgs.ServerName, 12000));
+            // Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new SingleRemoteInstanceProvider(parsedArgs.ServerName, 12000));
 
             // CONSUL 
-            //Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://" + parsedArgs.ConsulUrl + ":8500/")));
+            Cluster.Start("MyCluster", "127.0.0.1", 12000, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://127.0.0.1:8500/")));
+            Console.WriteLine("Started Cluster");
+            Console.CancelKeyPress += (sender, eventArgs) => {
+                eventArgs.Cancel = true;
+                exitEvent.Set();
+            };
 
-            Thread.Sleep(Timeout.Infinite);
+            exitEvent.WaitOne();
             Console.WriteLine("Shutting Down...");
             Cluster.Shutdown();
         }
