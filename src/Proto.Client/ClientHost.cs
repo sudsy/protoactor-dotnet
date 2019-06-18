@@ -8,7 +8,7 @@ using Proto.Remote;
 
 namespace Proto.Client
 {
-    public class ClientHost 
+    public static class ClientHost 
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(ClientHost).FullName);
         
@@ -17,35 +17,25 @@ namespace Proto.Client
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         }
         
-        public static void Start(string hostname, int port)
-        {
-            Start(hostname, port, new RemoteConfig());
-        }
         
-        public static void Start(string hostname, int port, RemoteConfig config)
-        {
-            Logger.LogDebug($"Starting Client Host");
-            var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? port}";
-//            ProcessRegistry.Instance.Address = addr;
+        public static RemoteConfig WithClientHost(this RemoteConfig config){
             
             ProcessRegistry.Instance.RegisterHostResolver(pid =>
             {
                 Logger.LogDebug($"Testing if {pid} is a client");
                 return isClientAddress(pid.Address) ? new ClientProcess(pid) : null;
             });
-            
+
+            var addr = $"{config.AdvertisedHostname}:{config.AdvertisedPort}";
+
             var clientEndpointManager = new ClientHostEndpointManager(addr);
             config.AdditionalServices = new List<ServerServiceDefinition>
             {
                 ClientRemoting.BindService(clientEndpointManager)
             };
-            
-            Logger.LogDebug($"Starting Remote with Client Host {addr}");
-            Remote.Remote.Start(hostname, port, config);
-            
-            
+
+            return config;
         }
-        
         
         private static bool isClientAddress(string argAddress)
         {
