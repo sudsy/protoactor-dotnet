@@ -54,7 +54,7 @@ namespace Proto.Remote
         {
             RemoteConfig = config;
 
-            ProcessRegistry.Instance.RegisterHostResolver(pid => isRemoteAddress(pid.Address) ? new RemoteProcess(pid) : null);
+            ProcessRegistry.Instance.RegisterHostResolver(pid => isNotClient(pid.Address) ? new RemoteProcess(pid) : null);
 
             EndpointManager.Start();
             _endpointReader = new EndpointReader();
@@ -153,12 +153,9 @@ namespace Proto.Remote
             EndpointManager.RemoteDeliver(env);
         }
         
-        private static bool isRemoteAddress(string remoteAddress)
+        private static bool isNotClient(string remoteAddress)
         {
-            IPAddress parsedAddress;
-            int parsedPort;
-            var parts = remoteAddress.Split(':');
-            return IPAddress.TryParse(parts[0], out parsedAddress) && int.TryParse(parts[1], out parsedPort);
+            return !remoteAddress.StartsWith("client://");
         }
     }
 }
