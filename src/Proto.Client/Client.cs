@@ -137,7 +137,10 @@ namespace Proto.Client
             var endpointConfig = Tuple.Create(hostname, port);
             if (_endpointConfig != null & !endpointConfig.Equals(_endpointConfig) & _clientEndpointManager != null)
             {
-                throw new InvalidOperationException("Can't connect to multiple client hosts");
+                _logger.LogInformation("Request to connect to different host received - terminating existing connection");
+                _clientEndpointManager.Stop();
+                _clientEndpointManager = null;
+
             }
 
             //Exponential Backoff for client connection
