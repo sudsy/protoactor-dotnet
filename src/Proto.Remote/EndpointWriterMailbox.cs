@@ -79,17 +79,13 @@ namespace Proto.Remote
                     m = sys;
                     await _invoker.InvokeSystemMessageAsync(sys);
                 }
-
-              
-                
                 if (!_suspended)
                 {
-                   
                     batch.Clear();
                     object msg;
                     while ((msg = _userMessages.Pop()) != null)
                     {
-                        if (msg is EndpointTerminatedEvent)
+                        if (msg is EndpointTerminatedEvent) //The mailbox was crashing when it received this particular message 
                         {
                             await _invoker.InvokeUserMessageAsync(msg);
                             continue;
@@ -100,8 +96,6 @@ namespace Proto.Remote
                         {
                             break;
                         }
-                        
-                       
                     }
 
                     if (batch.Count > 0)
@@ -125,10 +119,7 @@ namespace Proto.Remote
             if (_userMessages.HasMessages || _systemMessages.HasMessages &! _suspended )
             {
                 Schedule();
-                
             }
-            
-            
         }
 
         protected void Schedule()

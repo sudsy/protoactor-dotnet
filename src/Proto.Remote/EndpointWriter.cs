@@ -59,7 +59,7 @@ namespace Proto.Remote
                     await RestartingAsync();
                     break;
                 case EndpointTerminatedEvent _:
-                    context.Self.Stop();
+                    context.Stop(context.Self);
                     break;
                 case IEnumerable<RemoteDeliver> m:
                     

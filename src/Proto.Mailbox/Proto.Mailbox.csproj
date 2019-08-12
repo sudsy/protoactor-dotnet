@@ -1,12 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
-    <Version>0.2.122-Cluster-Experiments</Version>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>0.1.6-dev</Version>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-  </PropertyGroup>
+ 
   <PropertyGroup>
     <OutputType>library</OutputType>
     <Authors>Proto.Actor Team</Authors>
