@@ -23,14 +23,14 @@ namespace Proto.Client.Tests
         {
             _testOutputHelper = testOutputHelper;
         }
-        [Fact, DisplayTestMethodName]
-        public async Task TimeoutOnConnectFailure()
-        {
+        // [Fact, DisplayTestMethodName]
+        // public async Task TimeoutOnConnectFailure()
+        // {
 
             
-            await Assert.ThrowsAsync<TimeoutException>(async () => { await Client.CreateAsync("127.0.0.1", 12222, new RemoteConfig(), 1000); });
+        //     await Assert.ThrowsAsync<TimeoutException>(async () => { await Client.CreateAsync("127.0.0.1", 12222, new RemoteConfig(), 1000); });
 
-        }
+        // }
 
         
 //        [Fact, DisplayTestMethodName]
