@@ -114,7 +114,9 @@ namespace Proto.Remote
             foreach (var msg in fd.MessageTypes)
             {
                 var name = fd.Package + "." + msg.Name;
-                TypeLookup.Add(name, msg.Parser);
+                if(!TypeLookup.ContainsKey(name)){
+                    TypeLookup.Add(name, msg.Parser);
+                }   
             }
         }
 
