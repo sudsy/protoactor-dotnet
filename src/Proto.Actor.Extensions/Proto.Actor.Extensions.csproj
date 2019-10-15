@@ -1,10 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <Version>0.1.6-dev</Version>
     <OutputType>Library</OutputType>
   </PropertyGroup>
- 
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+  </PropertyGroup>
   <PropertyGroup>
     <OutputType>library</OutputType>
     <Authors>Proto.Actor Team</Authors>
