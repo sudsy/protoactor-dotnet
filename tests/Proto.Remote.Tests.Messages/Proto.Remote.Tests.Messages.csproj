@@ -4,7 +4,11 @@
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
+    <Protobuf Include="tests/Proto.Remote.Tests.Messages/Protos.proto" ProtoRoot="../.." GrpcServices="None" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.7.0" />
+     <PackageReference Include="Grpc.Tools" Version="1.20.0" PrivateAssets="All"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />

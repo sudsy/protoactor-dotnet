@@ -5,8 +5,7 @@
     <RootNamespace>Chat.Messages</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="build.bat" />
-    <None Include="Chat.proto" />
+    <Protobuf Include="examples/Chat/Messages/Chat.proto" ProtoRoot="../../.." GrpcServices="None" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.7.0" />
