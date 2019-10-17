@@ -209,10 +209,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Client", "src\Proto.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Client.Tests", "tests\Proto.Client.Tests\Proto.Client.Tests.csproj", "{9889A55B-E645-474E-A235-28B66C2351E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Client.Tests", "tests\Proto.Client.Tests\Proto.Client.Tests.csproj", "{C4C46AED-E0D8-41F9-915C-0B1DFACB5263}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Client", "src\Proto.Client\Proto.Client.csproj", "{9E4FF213-B884-4B7A-82CD-1DD7A3F63E56}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
