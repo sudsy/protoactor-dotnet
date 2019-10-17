@@ -8,10 +8,11 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="build.bat" />
-    <None Include="Protos.proto" />
+    <Protobuf Include="examples/ClusterGrainHelloWorld/Messages/Protos.proto" ProtoRoot="../../.." GrpcServices="None" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.7.0" />
+    <PackageReference Include="Grpc.Tools" Version="1.20.0" PrivateAssets="All"/>
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>

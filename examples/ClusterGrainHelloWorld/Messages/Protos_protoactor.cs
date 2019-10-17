@@ -59,7 +59,7 @@ namespace Messages
                 }
 
                 //request the RPC method to be invoked
-                var res = await RootContext.Empty.RequestAsync<object>(pid, gr, ct);
+                var res = await pid.RequestAsync<object>(gr, ct);
 
                 //did we get a response?
                 if (res is GrainResponse grainResponse)
@@ -81,7 +81,7 @@ namespace Messages
                 {
                     return await Inner();
                 }
-                catch(Exception)
+                catch(Exception x)
                 {
                     if (options.RetryAction != null)
                     {
@@ -109,7 +109,7 @@ namespace Messages
                 }
                 case ReceiveTimeout _:
                 {
-                    context.Stop(context.Self);
+                    context.Self.Stop();
                     break;
                 }
                 case GrainRequest request:
