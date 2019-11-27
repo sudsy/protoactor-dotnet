@@ -105,6 +105,7 @@ namespace Proto.Cluster
             }
             catch(TimeoutException)
             {
+                Logger.LogError($"Timeout spawning {kind} on {remotePid}");
                 return (null, ResponseStatusCode.Timeout);
             }
             catch
