@@ -171,7 +171,7 @@ namespace Proto.Remote
             _logger.LogDebug($"Connected client for address {_address}");
            
             
-            var _ = Task.Factory.StartNew(async () =>
+            var _ = Task.Run(async () =>
             {
                 try
                 {

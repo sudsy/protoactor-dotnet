@@ -313,7 +313,7 @@ namespace Proto.Cluster
             });
 
             //Perform Spawning
-            Task.Factory.StartNew(() => Spawning(msg, activator, 3, spawning));
+            Task.Run(() => Spawning(msg, activator, 3, spawning));
         }
 
         private async Task Spawning(ActorPidRequest req, string activator, int retryLeft, SpawningProcess spawning)
