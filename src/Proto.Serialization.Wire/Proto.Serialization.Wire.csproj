@@ -2,7 +2,7 @@
   <Import Project="../../netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
-    <Version>0.2.124-Cluster-Experiments</Version>
+    <Version>0.2.125-Cluster-Experiments</Version>
     <RootNamespace>Proto.Serialization.Wire</RootNamespace>
     <OutputType>Library</OutputType>
   </PropertyGroup>
