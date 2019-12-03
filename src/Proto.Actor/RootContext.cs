@@ -116,6 +116,7 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message)
         {
+            
             if (SenderMiddleware != null)
             {
                 //slow path

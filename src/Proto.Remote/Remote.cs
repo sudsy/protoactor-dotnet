@@ -150,6 +150,7 @@ namespace Proto.Remote
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
 
             var env = new RemoteDeliver(header, message, pid, sender, serializerId);
+            Logger.LogDebug($"Passing message for {pid} to Endpoint Manager");
             EndpointManager.RemoteDeliver(env);
         }
         

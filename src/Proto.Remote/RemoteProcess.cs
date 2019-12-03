@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 // -----------------------------------------------------------------------
 //   <copyright file="RemoteProcess.cs" company="Asynkron HB">
 //       Copyright (C) 2015-2018 Asynkron HB All rights reserved
@@ -8,6 +9,7 @@ namespace Proto.Remote
 {
     public class RemoteProcess : Process
     {
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(RemoteProcess).FullName);
         private readonly PID _pid;
 
         public RemoteProcess(PID pid)
@@ -21,6 +23,7 @@ namespace Proto.Remote
 
         private void Send(object msg)
         {
+            Logger.LogDebug($"Sending {msg.GetType()} message to remote {_pid}");
             if (msg is Watch w)
             {
                 var rw = new RemoteWatch(w.Watcher, _pid);

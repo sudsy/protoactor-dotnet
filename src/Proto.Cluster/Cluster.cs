@@ -90,6 +90,7 @@ namespace Proto.Cluster
 
             try
             {
+                Logger.LogDebug($"Sending request for {kind} on {remotePid}");
                 var resp = ct == CancellationToken.None
                            ? await RootContext.Empty.RequestAsync<ActorPidResponse>(remotePid, req, Config.TimeoutTimespan)
                            : await RootContext.Empty.RequestAsync<ActorPidResponse>(remotePid, req, ct);

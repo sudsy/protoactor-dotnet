@@ -2,7 +2,7 @@
   <Import Project="../../../netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
-    <Version>0.2.125-Cluster-Experiments</Version>
+    <Version>0.2.126-Cluster-Experiments</Version>
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
     <Description>Ultra-fast distributed actors for .NET.</Description>

@@ -99,6 +99,7 @@ namespace Proto.Remote
         public static void RemoteDeliver(RemoteDeliver msg)
         {
             var endpoint = EnsureConnected(msg.Target.Address);
+            Logger.LogDebug("Forwarding message to Endpoint Writer");
             RootContext.Empty.Send(endpoint.Writer, msg);
            
         }

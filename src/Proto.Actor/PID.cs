@@ -7,12 +7,15 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto
 {
     // ReSharper disable once InconsistentNaming
     public partial class PID
     {
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(PID).FullName);
+
         private Process _process;
 
         public PID(string address, string id)
@@ -52,7 +55,9 @@ namespace Proto
 
         internal void SendUserMessage(object message)
         {
+            Logger.LogDebug($"Sending Message to {this}");
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
+            Logger.LogDebug($"Found Process for {this}");
             reff.SendUserMessage(this, message);
         }
 
