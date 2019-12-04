@@ -49,6 +49,7 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case Started _:
+                    _logger.LogDebug("Starting Endpoint Writer");
                     await StartedAsync(context);
                     break;
                 case Stopped _:

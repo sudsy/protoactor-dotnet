@@ -72,6 +72,7 @@ namespace Proto
         {
             var reff = ProcessRegistry.Instance.Get(this);
             reff.Stop(this);
+            ProcessRegistry.Instance.Remove(this);
         }
 
         [Obsolete("Replaced with Context.StopAsync(pid)", false)]

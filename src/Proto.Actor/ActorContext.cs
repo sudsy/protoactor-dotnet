@@ -559,6 +559,7 @@ namespace Proto
         {
             var reff = ProcessRegistry.Instance.Get(pid);
             reff.Stop(pid);
+            ProcessRegistry.Instance.Remove(pid);
         }
 
         public Task StopAsync(PID pid)

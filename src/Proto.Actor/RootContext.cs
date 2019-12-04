@@ -133,6 +133,8 @@ namespace Proto
         {
             var reff = ProcessRegistry.Instance.Get(pid);
             reff.Stop(pid);
+            //Otherwise the process hangs around in the process registry
+            ProcessRegistry.Instance.Remove(pid);
         }
 
         public Task StopAsync(PID pid)

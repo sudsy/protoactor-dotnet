@@ -114,7 +114,7 @@ namespace Proto.Remote
             {
                 Logger.LogWarning("Exception in RunAsync", x);
                 _invoker.EscalateFailure(x,m);
-                return; //Without this, messages are delivered while failure is being escalated
+                //return; //Without this, messages are delivered while failure is being escalated
             }
 
 
