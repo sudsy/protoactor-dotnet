@@ -39,6 +39,8 @@ namespace Proto.Remote
         public void PostUserMessage(object msg)
         {
             _userMessages.Push(msg);
+             
+            Logger.LogDebug($"EndpointWriterMailbox received User Message added to queue");
             Schedule();
         }
 
@@ -85,6 +87,7 @@ namespace Proto.Remote
                     object msg;
                     while ((msg = _userMessages.Pop()) != null)
                     {
+                        Logger.LogDebug($"Adding messages to batch");
                         if (msg is EndpointTerminatedEvent) //The mailbox was crashing when it received this particular message 
                         {
                             await _invoker.InvokeUserMessageAsync(msg);
@@ -101,6 +104,7 @@ namespace Proto.Remote
                     if (batch.Count > 0)
                     {
                         m = batch;
+                        Logger.LogDebug($"Calling message invoker");
                         await _invoker.InvokeUserMessageAsync(batch);
                     }
                 }

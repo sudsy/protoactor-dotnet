@@ -47,7 +47,7 @@ namespace Proto.Mailbox
             Throughput = 300;
         }
 
-        public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
+        public void Schedule(Func<Task> runner) => Task.Run(runner);
 
         public int Throughput { get; set; }
     }

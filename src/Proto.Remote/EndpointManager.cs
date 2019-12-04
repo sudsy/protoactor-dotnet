@@ -30,7 +30,7 @@ namespace Proto.Remote
     {
         private class ConnectionRegistry : ConcurrentDictionary<string, Lazy<Endpoint>> { }
 
-        private static readonly ILogger Logger = Log.CreateLogger("EndpointManager");
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(EndpointManager).FullName);
 
         private static readonly ConnectionRegistry Connections = new ConnectionRegistry();
         private static PID _endpointSupervisor;
@@ -98,8 +98,9 @@ namespace Proto.Remote
 
         public static void RemoteDeliver(RemoteDeliver msg)
         {
+            
             var endpoint = EnsureConnected(msg.Target.Address);
-            Logger.LogDebug("Forwarding message to Endpoint Writer");
+            Logger.LogDebug($"Forwarding message for {msg.Target.Address} through EndpontWriter {endpoint.Writer}");
             RootContext.Empty.Send(endpoint.Writer, msg);
            
         }

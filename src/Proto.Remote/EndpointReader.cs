@@ -14,6 +14,7 @@ namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
+        private static readonly ILogger _logger = Log.CreateLogger<EndpointReader>();
         private bool _suspended;
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
@@ -32,6 +33,7 @@ namespace Proto.Remote
         public override async Task Receive(IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context)
         {
+            _logger.LogDebug($"Received GRPC Message Batch");
             var targets = new PID[100];
             await requestStream.ForEachAsync(batch =>
             {
@@ -72,6 +74,7 @@ namespace Proto.Remote
                             header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
                         }
                         var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                        _logger.LogDebug($"Forwarding Message Batch to {target}");
                         RootContext.Empty.Send(target, localEnvelope);
                     }
                 }

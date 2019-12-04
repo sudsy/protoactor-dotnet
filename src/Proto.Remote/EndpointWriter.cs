@@ -18,7 +18,7 @@ namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {
-        private static readonly ILogger Logger = Log.CreateLogger<EndpointWriter>();
+        private static readonly ILogger _logger = Log.CreateLogger<EndpointWriter>();
         private const int RetryCount = 2;
         
         private int _serializerId;
@@ -26,7 +26,7 @@ namespace Proto.Remote
         private readonly CallOptions _callOptions;
         private readonly ChannelCredentials _channelCredentials;
         private readonly IEnumerable<ChannelOption> _channelOptions;
-        private readonly ILogger _logger = Log.CreateLogger<EndpointWriter>();
+        
         private Channel _channel;
         private Remoting.RemotingClient _client;
         private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
@@ -45,7 +45,7 @@ namespace Proto.Remote
 
         public async Task ReceiveAsync(IContext context)
         {
-            Logger.LogDebug($"EndpointWriter received message {context.Message.GetType()} for {_address} while channel status is {_channel?.State}");
+            
             switch (context.Message)
             {
                 case Started _:
@@ -106,12 +106,12 @@ namespace Proto.Remote
 
                         envelopes.Add(envelope);
                     }
-
+                    
                     var batch = new MessageBatch();
                     batch.TargetNames.AddRange(targetNameList);
                     batch.TypeNames.AddRange(typeNameList);
                     batch.Envelopes.AddRange(envelopes);
-
+                    _logger.LogDebug($"EndpointWriter sending {envelopes.Count} Envelopes for {_address} while channel status is {_channel?.State}");        
                     await SendEnvelopesAsync(batch, context);
                     break;
             }
@@ -127,6 +127,7 @@ namespace Proto.Remote
             }
             try
             {
+                _logger.LogDebug($"Writing batch to {_address}");
                 await _streamWriter.WriteAsync(batch);
             }
             catch (Exception x)
