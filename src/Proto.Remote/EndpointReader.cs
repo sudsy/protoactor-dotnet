@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Proto.Mailbox;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {

@@ -2,7 +2,7 @@
   <Import Project="../../../netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
-    <Version>0.2.129-Cluster-Experiments</Version>
+    <Version>0.2.130-Cluster-Experiments</Version>
     <OutputType>Library</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
