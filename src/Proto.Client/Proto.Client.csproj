@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0</TargetFrameworks>
-        <Version>0.2.130-Cluster-Experiments</Version>
+        <Version>0.2.131-Cluster-Experiments</Version>
         <RootNamespace>Proto</RootNamespace>
     </PropertyGroup>
 
