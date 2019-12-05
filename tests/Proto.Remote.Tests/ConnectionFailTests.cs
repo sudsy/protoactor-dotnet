@@ -18,7 +18,7 @@ namespace Proto.Remote.Tests
             
 
         }
-        [Fact, DisplayTestMethodName]
+        // [Fact, DisplayTestMethodName]
         public async Task CanRecoverFromConnectionFailureAsync()
         {
 
@@ -67,7 +67,7 @@ namespace Proto.Remote.Tests
         }
 
 
-        [Fact, DisplayTestMethodName]
+        // [Fact, DisplayTestMethodName]
         public async Task CanDealWithConnectionFailureGracefully()
         {
 
@@ -146,7 +146,7 @@ namespace Proto.Remote.Tests
 
         }
 
-        [Fact, DisplayTestMethodName]
+        // [Fact, DisplayTestMethodName]
         public async Task MessagesGoToDeadLetterAfterConnectionFail()
         {
 

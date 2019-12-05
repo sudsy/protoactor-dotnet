@@ -3,7 +3,7 @@
   <Import Project="../../netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
-    <Version>0.2.131-Cluster-Experiments</Version>
+    <Version>0.2.132-Cluster-Experiments</Version>
     <OutputType>Library</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
@@ -20,9 +20,9 @@
     <PackageTags>actors actor model concurrency proto protoactor grpc</PackageTags>
   </PropertyGroup>
   
-  <!-- <ItemGroup>
+  <ItemGroup>
       <Protobuf Include="Proto.Remote/Protos.proto" ProtoRoot=".." />
-  </ItemGroup> -->
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.7.0" />
