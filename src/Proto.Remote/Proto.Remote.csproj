@@ -20,9 +20,9 @@
     <PackageTags>actors actor model concurrency proto protoactor grpc</PackageTags>
   </PropertyGroup>
   
-  <ItemGroup>
+  <!-- <ItemGroup>
       <Protobuf Include="Proto.Remote/Protos.proto" ProtoRoot=".." />
-  </ItemGroup>
+  </ItemGroup> -->
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.7.0" />
