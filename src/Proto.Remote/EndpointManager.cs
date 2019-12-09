@@ -155,7 +155,7 @@ namespace Proto.Remote
         {
             if (ShouldStop(rs))
             {
-                Logger.LogWarning($"Stopping connection to address {_address} after retries expired Reason { reason}");
+                Logger.LogWarning($"Stopping {child.ToShortString()} connection to address {_address} after retries expired Reason {reason}");
                 _cancelFutureRetries.Cancel();
                 supervisor.StopChildren(child);
                 ProcessRegistry.Instance.Remove(child); //TODO: work out why this hangs around in the process registry
@@ -174,7 +174,7 @@ namespace Proto.Remote
                 var duration = TimeSpan.FromMilliseconds(_backoff + noise);
                 Task.Delay(duration).ContinueWith(t =>
                 {
-                    Logger.LogWarning($"Restarting {child.ToShortString()} after {duration} Reason {reason}");
+                    Logger.LogWarning($"Restarting {child.ToShortString()} for {_address} after {duration} Reason {reason}");
                     supervisor.RestartChildren(reason, child);
                 }, _cancelFutureRetries.Token);
             }
