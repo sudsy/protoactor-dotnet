@@ -16,7 +16,7 @@ namespace Proto
         private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
         private readonly HashedConcurrentDictionary _localActorRefs = new HashedConcurrentDictionary();
         private int _sequenceId;
-        public static ProcessRegistry Instance { get; } = new ProcessRegistry();
+        public static ProcessRegistry Instance { get; set; } = new ProcessRegistry();
         public string Address { get; set; } = NoHost;
 
         public void RegisterHostResolver(Func<PID, Process> resolver)

@@ -9,7 +9,7 @@ message StartRemote {
 }
 message Ping {
 	string message=1;
-	}
+}
 message Pong {
 	string message=1;
-	}
+}

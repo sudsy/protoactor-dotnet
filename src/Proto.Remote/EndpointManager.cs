@@ -165,6 +165,10 @@ namespace Proto.Remote
                     Address = _address
                 };
                 Actor.EventStream.Publish(terminated);
+
+                //Reset everything to original values - really this should be reset whenever the service successfully reconnects
+                _backoff = Remote.RemoteConfig.EndpointWriterOptions.RetryBackOffms;
+                _cancelFutureRetries = new CancellationTokenSource();
                 
             }
             else
