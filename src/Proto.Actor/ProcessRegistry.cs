@@ -10,13 +10,15 @@ using System.Threading;
 
 namespace Proto
 {
-    public class ProcessRegistry
+   
+
+    public class ProcessRegistry : IProcessRegistry
     {
         private const string NoHost = "nonhost";
         private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
         private readonly HashedConcurrentDictionary _localActorRefs = new HashedConcurrentDictionary();
         private int _sequenceId;
-        public static ProcessRegistry Instance { get; set; } = new ProcessRegistry();
+        public static IProcessRegistry Instance { get; set; } = new ProcessRegistry();
         public string Address { get; set; } = NoHost;
 
         public void RegisterHostResolver(Func<PID, Process> resolver)
@@ -53,11 +55,11 @@ namespace Proto
                        ? process
                        : DeadLetterProcess.Instance;
         }
-        
+
         public (PID pid, bool ok) TryAdd(string id, Process process)
         {
             var pid = new PID(Address, id, process);
-            
+
             var ok = _localActorRefs.TryAdd(pid.Id, process);
             return ok ? (pid, true) : (new PID(Address, id), false);
         }
