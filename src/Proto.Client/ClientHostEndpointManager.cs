@@ -80,7 +80,12 @@ namespace Proto.Client
 
                         Logger.LogDebug($"Sending message {message.GetType()} to target {target} from {envelope.Sender}");
                         
-                        RootContext.Empty.Send(target, forwardingEnvelope);
+                        if(message is Proto.Mailbox.SystemMessage sys){
+                            target.SendSystemMessage(sys);
+                        }else{
+                            RootContext.Empty.Send(target, forwardingEnvelope);
+                        }
+                        
 
 
 

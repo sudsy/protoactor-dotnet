@@ -88,6 +88,12 @@ namespace Proto.Client
                             return;
 
                         }
+                        else if (message is Proto.Mailbox.SystemMessage sys)
+                        {
+                            _logger.LogDebug($"Delivering system Message to {target}");
+                            target.SendSystemMessage(sys);
+                            return;
+                        }
 
 
                         _logger.LogDebug(

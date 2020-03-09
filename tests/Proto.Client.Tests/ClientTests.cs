@@ -23,6 +23,50 @@ namespace Proto.Client.Tests
         {
             _testOutputHelper = testOutputHelper;
         }
+
+        [Fact, DisplayTestMethodName]
+        public async Task CanStopRemoteActor(){
+            var remoteManager = new RemoteManager();
+
+             using(var client = await Client.CreateAsync("127.0.0.1", 12000, new RemoteConfig(), 10000))
+            {
+                var clientHostActor = new PID(remoteManager.DefaultNode.Address, "EchoActorInstance");
+                var ct = new CancellationTokenSource(60000);
+                var tcs = new TaskCompletionSource<bool>();
+                ct.Token.Register(() =>
+                {
+                    tcs.TrySetCanceled();
+                });
+            
+                //This needs to spawn with a connection ID
+                var localActor = RootContext.Empty.Spawn(Props.FromFunc(ctx =>
+                {
+                    switch(ctx.Message){
+                        case Started _:
+                            ctx.Watch(clientHostActor);
+                            break;
+                        case Terminated terminated:
+                            tcs.SetResult(true);
+                            ctx.Stop(ctx.Self);
+                            break;
+                        case Pong _:   
+                            ctx.Stop(clientHostActor);
+                            
+                            break;
+                    }
+                    
+                    return Actor.Done;
+                }));
+    
+                
+                var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
+                var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
+                
+                Client.SendMessage(clientHostActor, envelope, 1);
+                await tcs.Task;
+            };
+            remoteManager.Dispose();
+        }
         // [Fact, DisplayTestMethodName]
         // public async Task TimeoutOnConnectFailure()
         // {
